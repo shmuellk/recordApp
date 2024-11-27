@@ -1,5 +1,5 @@
 import axios from "axios";
-const IP = "http://128.140.125.244:8080";
+import { IP } from "@env";
 
 const getManufacturer = async () => {
   try {

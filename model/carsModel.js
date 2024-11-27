@@ -1,7 +1,5 @@
 import axios from "axios";
-require("dotenv").config();
-
-const IP = process.env.IP;
+import { IP } from "@env";
 
 const getCarInfo = async (carNumber) => {
   try {
