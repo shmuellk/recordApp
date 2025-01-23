@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
+  FlatList,
   Keyboard,
   I18nManager,
   ActivityIndicator, // Import to handle RTL/LTR
@@ -18,12 +19,13 @@ import Button from "../components/Button";
 import Filter from "../components/Filter";
 import carModel from "../model/carsModel";
 import filterModel from "../model/filterModel";
+import itemCardModel from "../model/itemCardModel";
 
 const { width, height } = Dimensions.get("window");
 
 const SearchScreen = ({ navigation, route }) => {
   const [loadingFilters, setLoadingFilters] = useState({}); // Manage loading states for filters
-  const { userName } = route.params;
+  const { userData } = route.params;
   const [selectedTab, setSelectedTab] = useState("SerchByCarNumber");
   const animatedHeight = useRef(new Animated.Value(height * 0.46)).current;
   const [carNumber, setCarNumber] = useState("");
@@ -41,6 +43,27 @@ const SearchScreen = ({ navigation, route }) => {
   const [searchLoading, setSearchLoading] = useState(false); // Loader state for search button
   const [searchEnabled, setSearchEnabled] = useState(false); // Loader state for search button
   const [SDkserchInput, setSDkserchInput] = useState("");
+  const [SDKData, setSDKData] = useState([]);
+
+  useEffect(() => {
+    fatchSDKSerch = async () => {
+      if (SDkserchInput != "" && SDkserchInput.length > 1) {
+        try {
+          let temp = await filterModel.getAlternativeSKU({
+            SKU: SDkserchInput,
+          });
+          setSDKData(temp || []);
+        } catch (error) {
+          console.log("====================================");
+          console.log("error : " + error);
+          console.log("====================================");
+        }
+      } else {
+        setSDKData([]);
+      }
+    };
+    fatchSDKSerch();
+  }, [SDkserchInput]);
 
   useEffect(() => {
     //יצרן
@@ -388,6 +411,7 @@ const SearchScreen = ({ navigation, route }) => {
 
   const handleTabChange = (tab) => {
     setSelectedTab(tab);
+    setSDKData([]);
     setSearchEnabled(false);
     setSearchJson({
       MANUFACTURER: "",
@@ -439,8 +463,6 @@ const SearchScreen = ({ navigation, route }) => {
           MODEL: searchJson.MODEL,
           MANUFACTURE_YEAR: searchJson.MANUFACTURE_YEAR,
           ENGINE_MODEL: searchJson.ENGINE_MODEL,
-          CAPACITY: searchJson.CAPACITY,
-          GAS: searchJson.GAS,
           GEAR: searchJson.GEAR,
           PROPULSION: searchJson.PROPULSION,
           DOORS: searchJson.DOORS,
@@ -451,8 +473,8 @@ const SearchScreen = ({ navigation, route }) => {
         if (category) {
           Keyboard.dismiss();
           navigation.navigate("ItemScreen", {
-            userName: userName,
-            searchJson: searchJson,
+            userName: userData.U_VIEW_NAME,
+            carData: searchJson,
             category: category,
           });
         } else {
@@ -500,58 +522,138 @@ const SearchScreen = ({ navigation, route }) => {
     }
   };
 
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    // Add listeners for keyboard show and hide
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true); // Keyboard is visible
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false); // Keyboard is hidden
+      }
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  const handleSelect = async (item) => {
+    setSDkserchInput("");
+    setSDKData([]);
+    // setSearchLoading(true); // Start loader
+    try {
+      const product = await carModel.getProdactsById({
+        CATALOG_NUMBER: item,
+      });
+      if (product.length > 1) {
+        Keyboard.dismiss();
+        navigation.navigate("SkuScreen", {
+          userName: userData.U_VIEW_NAME,
+          product: product,
+          CATALOG_NUMBER: item,
+        });
+      } else if (product.length == 1) {
+        Keyboard.dismiss();
+        try {
+          const Brand = await itemCardModel.getItemBrand({
+            CATALOG_NUMBER: product[0].CATALOG_NUMBER,
+            CHILD_GROUP: product[0].CHILD_GROUP,
+            DESCRIPTION_NOTE: product[0].DESCRIPTION_NOTE,
+          });
+          console.log("====================================");
+          console.log("Brand: " + JSON.stringify(Brand));
+          console.log("====================================");
+          navigation.navigate("ItemCardScreen", { item: product[0], Brand });
+        } catch (error) {
+          console.log("====================================");
+          console.log("Error: " + error);
+          console.log("====================================");
+        }
+      } else {
+        console.log("====================================");
+        console.log("error");
+        console.log("====================================");
+      }
+    } catch (error) {
+      console.error("Error fetching manufacturers:", error);
+    } finally {
+      setSearchLoading(false); // Stop loader
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View style={styles.container}>
-        <View style={styles.top}>
-          <Image
-            style={styles.image}
-            source={require("../assets/PageLogo.png")}
-          />
-          <View style={styles.textContainer}>
-            <Text style={styles.hader}>שלום {userName}</Text>
-            <Text style={styles.subText}>בחר את שיטת החיפוש המועדפת עליך</Text>
+        {(!isKeyboardVisible || selectedTab === "SerchByCarNumber") && (
+          <View style={styles.top}>
+            <Image
+              style={styles.image}
+              source={require("../assets/PageLogo.png")}
+            />
+            <View style={styles.textContainer}>
+              <Text style={styles.hader}>שלום {userData.U_VIEW_NAME}</Text>
+              <Text style={styles.subText}>
+                בחר את שיטת החיפוש המועדפת עליך
+              </Text>
+            </View>
           </View>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
+        )}
+        <View
+          style={[
+            styles.tabContainer,
+            isKeyboardVisible &&
+              selectedTab != "SerchByCarNumber" && {
+                paddingTop: 40,
+              },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "SerchByCarNumber"
+                ? styles.activeTab
+                : styles.inactiveTab,
+            ]}
+            onPress={() => handleTabChange("SerchByCarNumber")}
+          >
+            <Text
               style={[
-                styles.tabButton,
+                styles.tabText,
                 selectedTab === "SerchByCarNumber"
-                  ? styles.activeTab
-                  : styles.inactiveTab,
+                  ? styles.activeTabText
+                  : styles.inactiveTabText,
               ]}
-              onPress={() => handleTabChange("SerchByCarNumber")}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === "SerchByCarNumber"
-                    ? styles.activeTabText
-                    : styles.inactiveTabText,
-                ]}
-              >
-                חפש לפי רכב
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              חפש לפי רכב
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "part" ? styles.activeTab : styles.inactiveTab,
+            ]}
+            onPress={() => handleTabChange("part")}
+          >
+            <Text
               style={[
-                styles.tabButton,
-                selectedTab === "part" ? styles.activeTab : styles.inactiveTab,
+                styles.tabText,
+                selectedTab === "part"
+                  ? styles.activeTabText
+                  : styles.inactiveTabText,
               ]}
-              onPress={() => handleTabChange("part")}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === "part"
-                    ? styles.activeTabText
-                    : styles.inactiveTabText,
-                ]}
-              >
-                חפש מק"ט
-              </Text>
-            </TouchableOpacity>
-          </View>
+              חפש מק"ט
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <Animated.View style={[styles.data, { height: animatedHeight }]}>
@@ -716,27 +818,48 @@ const SearchScreen = ({ navigation, route }) => {
                     if (SDkserchInput != "") {
                       setSearchEnabled(true);
                     } else {
-                      false;
+                      setSearchEnabled(false);
                     }
                   }}
                   value={SDkserchInput}
-                  keyboardType="numeric"
-                  returnKeyType="search" // Changes the return key label to "Search"
-                  onSubmitEditing={serchCarByNumber} // Calls the search function when "Enter" is pressed
                 />
               </View>
             </View>
           )}
         </Animated.View>
+        {/* SDKData Rendering */}
+        {SDKData.length > 0 ? (
+          <View style={styles.suggestionsContainer}>
+            <FlatList
+              keyboardShouldPersistTaps={"handled"}
+              showsVerticalScrollIndicator={false}
+              data={SDKData}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => handleSelect(item)}>
+                  <Text style={styles.suggestionText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        ) : (
+          SDkserchInput.length > 1 && (
+            <View style={styles.nosuggestionsContainer}>
+              <Text style={styles.suggestionText}>אין מקטים תואמים לחיפוש</Text>
+            </View>
+          )
+        )}
 
-        <View style={styles.bottom}>
-          <Button
-            title="חפש"
-            onPress={onSerch}
-            loading={searchLoading}
-            enable={searchEnabled}
-          />
-        </View>
+        {selectedTab === "SerchByCarNumber" && (
+          <View style={styles.bottom}>
+            <Button
+              title="חפש"
+              onPress={onSerch}
+              loading={searchLoading}
+              enable={searchEnabled}
+            />
+          </View>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -746,14 +869,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    flexDirection: "column",
   },
-  SDkserchInput: {},
+  suggestionsContainer: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    marginTop: 4,
+    minHeight: 30,
+    maxHeight: height * 0.35,
+    bottom: 40,
+  },
+  nosuggestionsContainer: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    marginTop: 4,
+    minHeight: 30,
+    alignContent: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    maxHeight: height * 0.5,
+    bottom: 40,
+  },
+  suggestionText: {
+    padding: 12,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
   serchClick: {
     backgroundColor: "#ED2027",
     width: width * 0.12,
-    height: 61,
+    height: height * 0.08,
+    maxHeight: 61,
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: I18nManager.isRTL ? "flex-end" : "flex-start",
     borderTopRightRadius: I18nManager.isRTL ? 15 : 0,
     borderBottomRightRadius: I18nManager.isRTL ? 15 : 0,
     borderTopLeftRadius: I18nManager.isRTL ? 0 : 15,
@@ -762,17 +916,17 @@ const styles = StyleSheet.create({
   CarNumSerchOut: {
     backgroundColor: "white",
     width: width * 0.9,
-    height: 61,
+    height: height * 0.08,
+    maxHeight: 61,
     borderRadius: 15,
     top: height * 0.01,
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
     marginBottom: 10,
   },
   top: {
     backgroundColor: "#EBEDF5",
-    height: height * 0.35,
-    alignItems: "center",
+    paddingHorizontal: 25,
+    flexDirection: "column",
   },
   data: {
     backgroundColor: "#EBEDF5",
@@ -787,16 +941,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   image: {
-    top: height * 0.1,
+    maxHeight: "100%",
+    maxWidth: "100%",
+    height: height * 0.05,
+    resizeMode: "contain",
+    marginTop: 40,
+    alignSelf: "center",
   },
   icon: {
     marginHorizontal: 10,
   },
   textContainer: {
-    flex: 1,
     alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
-    left: I18nManager.isRTL ? -30 : 30,
-    top: height * 0.12,
   },
   hader: {
     fontSize: 28,
@@ -812,12 +968,13 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 15,
-    backgroundColor: "white",
-    width: width * 0.9,
+    alignSelf: "center",
+    backgroundColor: "#EBEDF5",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   tabButton: {
     flex: 1,
@@ -855,14 +1012,11 @@ const styles = StyleSheet.create({
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     justifyContent: "space-between",
   },
-  tubInfo: {
-    marginTop: 20,
-  },
+
   CarNumSerch: {
     flex: 1,
     textAlign: I18nManager.isRTL ? "left" : "right", // Handle RTL/LTR
-    alignItems: "center",
-    justifyContent: "center",
+
     color: "#BDC3C7",
     fontSize: 18,
     left: 10,

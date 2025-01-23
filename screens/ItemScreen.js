@@ -11,11 +11,13 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
+  ActivityIndicator,
+  Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather"; // Using Ionicons for the left arrow
 import renderItem from "../components/renderItem";
 import carModel from "../model/carsModel";
-
+import CarInfoPop from "../components/CarInfoPop";
 const { width, height } = Dimensions.get("window");
 
 const ItemScreen = ({ navigation, route }) => {
@@ -23,12 +25,14 @@ const ItemScreen = ({ navigation, route }) => {
   const [filteredItems, setFilteredItems] = useState([]); // State for filtered items
   const [showImage, setShowImage] = useState(false); // State for image display
   const [currentCategory, setCurrentCategory] = useState("MainCategory"); // Track current category level
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null); // Track the selected category
+  // const [selectedCategoryId, setSelectedCategoryId] = useState(null); // Track the selected category
   const [selectedPARENT_GROUP, setSelectedPARENT_GROUP] = useState(null); // Track the selected category
   const [selectedITEM_GROUP, setSelectedITEM_GROUP] = useState(null); // Track the selected category
   const [selectedCHILD_GROUP, setSelectedCHILD_GROUP] = useState(null); // Track the selected category
+  const [loader, setLoader] = useState(false);
+  const [openPopUp, setOpenPopUp] = useState(false);
 
-  const { category, searchJson } = route.params;
+  const { category, carData } = route.params;
 
   const MainCategory = category
     .filter(
@@ -65,14 +69,6 @@ const ItemScreen = ({ navigation, route }) => {
   // Filter function based on the search query
   const handleSearch = (text) => {
     setSearchQuery(text);
-    if (text === "") {
-      setFilteredItems(route.params.Items); // Reset to original items if search is cleared
-    } else {
-      const filteredData = route.params.Items.filter(
-        (item) => item.name.includes(text) || item.carName.includes(text)
-      );
-      setFilteredItems(filteredData);
-    }
   };
 
   const hendelCategoryChose = (category) => {
@@ -80,12 +76,6 @@ const ItemScreen = ({ navigation, route }) => {
       let categoryTemp = SubCategory.filter(
         (sub) => sub.main === category.name
       );
-
-      const filteredData = filteredItems.filter(
-        (item) => item.PARENT_GROUP === category.name
-      );
-
-      setFilteredItems(filteredData); // Filter items
       setCategories(categoryTemp); // Load subcategories
       setCurrentCategory("SubCategory");
 
@@ -98,24 +88,13 @@ const ItemScreen = ({ navigation, route }) => {
       let categoryTemp = GrendSubCategory.filter(
         (sub) => sub.main === category.name
       );
-
-      const filteredData = filteredItems.filter(
-        (item) => item.ITEM_GROUP === category.name
-      );
-
-      setFilteredItems(filteredData); // Filter items
       setCategories(categoryTemp); // Load grand subcategories
       setCurrentCategory("GrendSubCategory");
-
       // Update selected category states
       setSelectedITEM_GROUP(category.name);
       setSelectedCHILD_GROUP(null); // Clear lower-level selections
     } else if (currentCategory === "GrendSubCategory") {
-      const filteredData = filteredItems.filter(
-        (item) => item.CHILD_GROUP === category.name
-      );
-
-      setFilteredItems(filteredData); // Filter items
+      setCurrentCategory("GrendSubCategory");
       setSelectedCHILD_GROUP(category.name); // Update selected child group
     }
   };
@@ -148,7 +127,8 @@ const ItemScreen = ({ navigation, route }) => {
   const renderCategory = ({ item, index }) => (
     <TouchableOpacity
       style={[
-        currentCategory === "GrendSubCategory" && selectedCategoryId === item.id
+        currentCategory === "GrendSubCategory" &&
+        selectedCHILD_GROUP === item.name
           ? styles.categoryItem2
           : styles.categoryItem,
         index === 0 && { marginTop: 10 },
@@ -167,77 +147,130 @@ const ItemScreen = ({ navigation, route }) => {
     Keyboard.dismiss();
   };
 
+  const togglePopUp = () => {
+    setOpenPopUp(!openPopUp);
+  };
+
   useEffect(() => {
     // This effect will run whenever the currentCategory or categories change.
-    console.log("Category changed:", currentCategory);
-    console.log("Available categories:", categories);
 
     // Example: Add any logic that needs to happen when the category changes
     if (currentCategory === "MainCategory") {
       ProdactsByCar = async () => {
-        const response = await carModel.getProdactsByCar({
-          MANUFACTURER: searchJson.MANUFACTURER,
-          MODEL: searchJson.MODEL,
-          MANUFACTURE_YEAR: searchJson.MANUFACTURE_YEAR,
-          ENGINE_MODEL: searchJson.ENGINE_MODEL,
-          CAPACITY: searchJson.CAPACITY,
-          GAS: searchJson.GAS,
-          GEAR: searchJson.GEAR,
-          PROPULSION: searchJson.PROPULSION,
-          DOORS: searchJson.DOORS,
-          BODY: searchJson.BODY,
-          YEAR_LIMIT: searchJson.YEAR_LIMIT,
-          NOTE: searchJson.NOTE,
-        });
-        setFilteredItems(response);
+        try {
+          setLoader(true);
+          const response = await carModel.getProdactsByCar({
+            MANUFACTURER: carData.MANUFACTURER,
+            MODEL: carData.MODEL,
+            MANUFACTURE_YEAR: carData.MANUFACTURE_YEAR,
+            ENGINE_MODEL: carData.ENGINE_MODEL,
+            GEAR: carData.GEAR,
+            PROPULSION: carData.PROPULSION,
+            DOORS: carData.DOORS,
+            BODY: carData.BODY,
+            YEAR_LIMIT: carData.YEAR_LIMIT,
+            NOTE: carData.NOTE,
+          });
+          setFilteredItems(response);
+        } catch (err) {
+          console.log("====================================");
+          console.log("error : " + err.message);
+          console.log("====================================");
+        } finally {
+          setLoader(false);
+        }
       };
       ProdactsByCar();
-      console.log("You're in the Main Category");
     } else if (currentCategory === "SubCategory") {
       ProdactsByPARENT_GROUP = async () => {
-        const response = await carModel.getProdactsByPARENT_GROUP({
-          MANUFACTURER: searchJson.MANUFACTURER,
-          MODEL: searchJson.MODEL,
-          MANUFACTURE_YEAR: searchJson.MANUFACTURE_YEAR,
-          ENGINE_MODEL: searchJson.ENGINE_MODEL,
-          CAPACITY: searchJson.CAPACITY,
-          GAS: searchJson.GAS,
-          GEAR: searchJson.GEAR,
-          PROPULSION: searchJson.PROPULSION,
-          DOORS: searchJson.DOORS,
-          BODY: searchJson.BODY,
-          YEAR_LIMIT: searchJson.YEAR_LIMIT,
-          NOTE: searchJson.NOTE,
-          PARENT_GROUP: selectedPARENT_GROUP,
-        });
-        setFilteredItems(response);
+        try {
+          setLoader(true);
+          const response = await carModel.getProdactsByPARENT_GROUP({
+            MANUFACTURER: carData.MANUFACTURER,
+            MODEL: carData.MODEL,
+            MANUFACTURE_YEAR: carData.MANUFACTURE_YEAR,
+            ENGINE_MODEL: carData.ENGINE_MODEL,
+            GEAR: carData.GEAR,
+            PROPULSION: carData.PROPULSION,
+            DOORS: carData.DOORS,
+            BODY: carData.BODY,
+            YEAR_LIMIT: carData.YEAR_LIMIT,
+            NOTE: carData.NOTE,
+            PARENT_GROUP: selectedPARENT_GROUP,
+          });
+          setFilteredItems(response);
+        } catch (err) {
+          console.log("====================================");
+          console.log("error: " + err.message);
+          console.log("====================================");
+        } finally {
+          setLoader(false);
+        }
       };
       ProdactsByPARENT_GROUP();
-      console.log("You're in the Sub Category");
     } else if (currentCategory === "GrendSubCategory") {
       ProdactsByITEM_GROUP = async () => {
-        const response = await carModel.getProdactsByITEM_GROUP({
-          MANUFACTURER: searchJson.MANUFACTURER,
-          MODEL: searchJson.MODEL,
-          MANUFACTURE_YEAR: searchJson.MANUFACTURE_YEAR,
-          ENGINE_MODEL: searchJson.ENGINE_MODEL,
-          CAPACITY: searchJson.CAPACITY,
-          GAS: searchJson.GAS,
-          GEAR: searchJson.GEAR,
-          PROPULSION: searchJson.PROPULSION,
-          DOORS: searchJson.DOORS,
-          BODY: searchJson.BODY,
-          YEAR_LIMIT: searchJson.YEAR_LIMIT,
-          NOTE: searchJson.NOTE,
-          PARENT_GROUP: selectedPARENT_GROUP,
-          ITEM_GROUP: selectedITEM_GROUP,
-        });
-        setFilteredItems(response);
+        try {
+          setLoader(true);
+          const response = await carModel.getProdactsByITEM_GROUP({
+            MANUFACTURER: carData.MANUFACTURER,
+            MODEL: carData.MODEL,
+            MANUFACTURE_YEAR: carData.MANUFACTURE_YEAR,
+            ENGINE_MODEL: carData.ENGINE_MODEL,
+            GEAR: carData.GEAR,
+            PROPULSION: carData.PROPULSION,
+            DOORS: carData.DOORS,
+            BODY: carData.BODY,
+            YEAR_LIMIT: carData.YEAR_LIMIT,
+            NOTE: carData.NOTE,
+            PARENT_GROUP: selectedPARENT_GROUP,
+            ITEM_GROUP: selectedITEM_GROUP,
+          });
+          setFilteredItems(response);
+        } catch (err) {
+          console.log("====================================");
+          console.log("error: " + err.message);
+          console.log("====================================");
+        } finally {
+          setLoader(false);
+        }
       };
       ProdactsByITEM_GROUP();
-      console.log("You're in the Grand Sub Category");
     }
   }, [currentCategory, categories]);
+
+  useEffect(() => {
+    ProdactsByCHILD_GROUP = async () => {
+      if (selectedCHILD_GROUP) {
+        try {
+          setLoader(true);
+          const response = await carModel.ProdactsByCHILD_GROUP({
+            MANUFACTURER: carData.MANUFACTURER,
+            MODEL: carData.MODEL,
+            MANUFACTURE_YEAR: carData.MANUFACTURE_YEAR,
+            ENGINE_MODEL: carData.ENGINE_MODEL,
+            GEAR: carData.GEAR,
+            PROPULSION: carData.PROPULSION,
+            DOORS: carData.DOORS,
+            BODY: carData.BODY,
+            YEAR_LIMIT: carData.YEAR_LIMIT,
+            NOTE: carData.NOTE,
+            PARENT_GROUP: selectedPARENT_GROUP,
+            ITEM_GROUP: selectedITEM_GROUP,
+            CHILD_GROUP: selectedCHILD_GROUP,
+          });
+          setFilteredItems(response);
+        } catch (err) {
+          console.log("====================================");
+          console.log("error: " + err.message);
+          console.log("====================================");
+        } finally {
+          setLoader(false);
+        }
+      }
+    };
+    ProdactsByCHILD_GROUP();
+  }, [selectedCHILD_GROUP]);
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
@@ -257,10 +290,12 @@ const ItemScreen = ({ navigation, route }) => {
 
           <View style={styles.TitleView}>
             <Image source={require("../assets/PageHader.png")} />
-            <Text style={styles.haderTitel}>שם רכב</Text>
+            <Text style={styles.haderTitel}>
+              {carData.MODEL} {carData.MANUFACTURE_YEAR}
+            </Text>
           </View>
 
-          <TouchableOpacity style={styles.leftButton}>
+          <TouchableOpacity style={styles.leftButton} onPress={togglePopUp}>
             <Image source={require("../assets/Car_Info.png")} />
           </TouchableOpacity>
         </View>
@@ -336,15 +371,36 @@ const ItemScreen = ({ navigation, route }) => {
 
               <View
                 id="itemList"
-                style={{ flex: 6.5, backgroundColor: "#ffffff" }}
+                style={{
+                  flex: 6.5,
+                  backgroundColor: "#ffffff",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
               >
-                <FlatList
-                  data={filteredItems} // Use filteredItems here
-                  keyExtractor={(item, Index) => Index.toString()}
-                  renderItem={({ item }) => renderItem({ item, navigation })}
-                  ItemSeparatorComponent={renderSeparatorItem}
-                  showsVerticalScrollIndicator={false}
-                />
+                {loader ? (
+                  <View style={{ transform: [{ scale: 2 }] }}>
+                    <ActivityIndicator size="large" color="#d01117" />
+                  </View>
+                ) : (
+                  <FlatList
+                    data={filteredItems} // Use filteredItems here
+                    keyExtractor={(item, Index) => Index.toString()}
+                    renderItem={({ item }) =>
+                      renderItem({ item, navigation, carData })
+                    }
+                    ItemSeparatorComponent={
+                      filteredItems.length > 1 ? renderSeparatorItem : null
+                    } // No separator for single item
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                      flexGrow: 1,
+                      alignItems: "flex-end", // Align items properly
+                      alignContent: "flex-end",
+                      alignSelf: "flex-end",
+                    }}
+                  />
+                )}
               </View>
             </View>
           ) : (
@@ -366,6 +422,15 @@ const ItemScreen = ({ navigation, route }) => {
             </View>
           )}
         </View>
+
+        <Modal
+          visible={openPopUp}
+          transparent={true}
+          animationType="slide" // Animates the popup from the bottom
+          onRequestClose={togglePopUp} // Closes the modal on Android back button
+        >
+          <CarInfoPop data={carData} onClose={togglePopUp} />
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -405,7 +470,7 @@ const styles = StyleSheet.create({
   haderTitel: {
     fontWeight: "bold",
     fontSize: 16,
-    textDecorationLine: "underline",
+    // textDecorationLine: "underline",
     marginTop: 10,
   },
   leftButton: {
@@ -451,7 +516,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 16,
-    color: "#1A2540",
+    color: "#1A2540", //כרטיסי קטגוריה
     textAlign: "center",
   },
   CategorySeparator: {
@@ -479,13 +544,6 @@ const styles = StyleSheet.create({
     bottom: 10,
   },
   ItemImag: { flex: 4 },
-  ItemTitle: {
-    color: "#1A2540",
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "left",
-    top: 10,
-  },
   ItemInfoText: {
     fontSize: 18,
     color: "#7E7D83",
@@ -506,7 +564,7 @@ const styles = StyleSheet.create({
     alignItems: "center", // Vertically center text and icon
     width: "100%", // Ensure the button takes the full width
     height: 55,
-    backgroundColor: "#1A2540",
+    backgroundColor: "#1A2540", //קטגוריה
     position: "relative", // Allows for absolute positioning of the image
   },
 

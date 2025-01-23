@@ -10,33 +10,34 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   I18nManager,
+  ActivityIndicator,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
-const PopUp = ({ data, onClose, title }) => {
+const PopUp = ({ data, onClose, title, loading }) => {
   const renderRow = ({ item }) => (
     <View style={styles.tableRow}>
       <View style={styles.infoLine}>
         <Text style={styles.infoHeader}>קוד פריט: </Text>
         <Text style={[styles.tableCell, { fontWeight: "bold" }]}>
-          {item.id}
+          {item.ITEMCODE}
         </Text>
       </View>
 
       <View style={styles.infoLine}>
         <Text style={styles.infoHeader}>תיאור פריט: </Text>
-        <Text style={styles.tableCell}>{item.name}</Text>
+        <Text style={styles.tableCell}>{item.DSCRIPTION}</Text>
       </View>
 
       <View style={styles.infoLine}>
         <Text style={styles.infoHeader}>כמות: </Text>
-        <Text style={styles.tableCell}>{item.quantity}</Text>
+        <Text style={styles.tableCell}>{item.QUANTITY}</Text>
       </View>
 
       <View style={styles.infoLine}>
         <Text style={styles.infoHeader}>מחיר: </Text>
-        <Text style={styles.tableCell}>{item.price} ₪</Text>
+        <Text style={styles.tableCell}>{item.PRICE} ₪</Text>
       </View>
     </View>
   );
@@ -56,12 +57,24 @@ const PopUp = ({ data, onClose, title }) => {
           </TouchableOpacity>
           <Text style={styles.header}>{title}</Text>
           <View style={styles.separator} />
-          <FlatList
-            data={data} // Filtered data passed as props
-            keyExtractor={(item, index) => index.toString()} // Assume data is a list of strings
-            showsVerticalScrollIndicator={false}
-            renderItem={renderRow}
-          />
+          {loading ? (
+            /* Loader appears here if "loading" is true */
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator
+                size="large"
+                color="#ED2027"
+                style={styles.bigSpinner}
+              />
+            </View>
+          ) : (
+            /* Otherwise, show the data list */
+            <FlatList
+              data={data}
+              keyExtractor={(item, index) => index.toString()}
+              showsVerticalScrollIndicator={false}
+              renderItem={renderRow}
+            />
+          )}
         </View>
       </View>
     </TouchableWithoutFeedback>
@@ -96,6 +109,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5, // For Android shadow
     maxHeight: height * 0.8,
+    minHeight: height * 0.3,
   },
   closeButton: {
     alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", // Aligns close button to the top-left corner
@@ -134,5 +148,13 @@ const styles = StyleSheet.create({
     height: 1, // Thickness of the underline
     width: "100%", // Full width underline
     backgroundColor: "#E0E0E0", // Light gray underline
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bigSpinner: {
+    transform: [{ scaleX: 2 }, { scaleY: 2 }], // Scales the spinner up
   },
 });

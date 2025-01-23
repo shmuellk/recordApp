@@ -25,22 +25,24 @@ const PrevLog = ({ navigation }) => {
         style={styles.image}
         imageStyle={{ resizeMode: "stretch" }}
       >
-        <View style={styles.textContainer}>
-          <Text style={styles.hader}>חלקי חילוף לרכב שלך!</Text>
-          <Text style={styles.subText}>חיפוש יעיל ונוח לרכב שלך</Text>
-        </View>
-        <View>
-          <TouchableOpacity style={styles.button} onPress={handelOnPress}>
-            <View style={styles.buttonContent}>
-              <Icon
-                name={I18nManager.isRTL ? "arrow-left" : "arrow-left"}
-                size={20}
-                color="#FFFFFF"
-                style={styles.icon}
-              />
-              <Text style={styles.buttonText}>קדימה, מתחילים</Text>
-            </View>
-          </TouchableOpacity>
+        <View style={styles.bottom}>
+          <View style={styles.textContainer}>
+            <Text style={styles.hader}>חלקי חילוף לרכב שלך!</Text>
+            <Text style={styles.subText}>חיפוש יעיל ונוח לרכב שלך</Text>
+          </View>
+          <View>
+            <TouchableOpacity style={styles.button} onPress={handelOnPress}>
+              <View style={styles.buttonContent}>
+                <Icon
+                  name={I18nManager.isRTL ? "arrow-left" : "arrow-left"}
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.icon}
+                />
+                <Text style={styles.buttonText}>קדימה, מתחילים</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </ImageBackground>
     </View>
@@ -58,13 +60,12 @@ const styles = StyleSheet.create({
   },
   image: {
     width: width,
-    height: height * 1.1,
+    height: height * 1,
   },
   textContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     alignItems: I18nManager.isRTL ? "flex-start" : "flex-end", // Align text based on RTL/LTR
-    bottom: height * -0.8,
   },
   hader: {
     fontSize: 28,
@@ -87,7 +88,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row", // Set row direction
     width: width * 0.8,
-    bottom: height * -0.87,
     position: "absolute",
     alignSelf: "center", // Horizontally center the button
   },
@@ -104,6 +104,12 @@ const styles = StyleSheet.create({
   icon: {
     position: "absolute",
     [I18nManager.isRTL ? "left" : "left"]: width * -0.2, // Dynamically set icon position
+  },
+  bottom: {
+    position: "absolute",
+    bottom: 80, // Adjust button position relative to screen height
+    width: "100%",
+    // alignItems: "center",
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,98 +8,228 @@ import {
   Image,
   TouchableOpacity,
   I18nManager,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import cartModel from "../model/cartModel"; // adjust the path
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Button from "../components/Button";
 const { width, height } = Dimensions.get("window");
 
-const CartScreen = ({ navigation }) => {
-  const [quantities, setQuantities] = useState({});
+const CartScreen = ({ navigation, route }) => {
+  const [quantities, setQuantities] = useState({}); // Manage quantities for each item in the cart
   const [isEmpty, SetIsEmpty] = useState(false);
+  const { userData } = route.params;
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [removingItem, setRemovingItem] = useState({});
+  const [updatingItem, setUpdatingItem] = useState({});
 
-  const Items = [
-    {
-      id: "1",
-      name: "חיישן קרנק",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 16.99",
-      massege: "משמש כאחורי",
-      SKU: "Dx 36393464",
-      brand: "optimal",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2R1lcqAv6bIbhM8Rz7EFaRvc7LGn7324TPQ&s",
-    },
-    {
-      id: "2",
-      name: "חיישן קמשפט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      massege: "משמש כקידמי",
-      SKU: "Da 3367895",
-      brand: "ironman",
-      price: "₪ 15.99",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHuEm-A8VhRFQLApRaDRm9UqDddo_kB-Ykeg&s",
-    },
-    {
-      id: "3",
-      name: "מיסב ציריה",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      price: "₪ 2500.99",
-      year: "2006-2009",
-      SKU: "cc 87956774",
-      brand: "skf",
-      massege: "4 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL45GnDnLrfO_Ahwv_-grNGBLB0wnY6LVjSw&s",
-    },
-    {
-      id: "4",
-      name: "תרמוסטט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 88.99",
-      SKU: "fd 000688994",
-      brand: "MAD",
-      massege: "2 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpwcFdsQdS1VxdZ8YMKYhU1TQtzSqKexlDxg&s",
-    },
-  ];
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+
+          // 1) Fetch data from your model:
+          const data = await cartModel.getCartList({
+            userName: userData.U_USER_NAME,
+            cardCode: userData.U_CARD_CODE,
+          });
+
+          if (!data || data.length === 0) {
+            setCartItems([]);
+            setQuantities([]);
+            SetIsEmpty(true);
+            return; // Skip further processing
+          }
+
+          // 2) Transform each item to match the shape you want:
+          const transformedData = data.map((item) => ({
+            id: item.ID,
+            name: item.CHILD_GROUP + (item.DESCRIPTION_NOTE || ""), // guard against empty
+            carName: item.MODEL,
+            net_price: item.NET_PRICE,
+            gross_price: item.GROSS_PRICE,
+            message: item.CAR_NOTE,
+            brand: item.BRAND,
+            image: item.IMAGE,
+            SKU: item.ITEMCODE,
+            quantity: item.QUANTITY,
+          }));
+          setCartItems(transformedData);
+          const updatedQuantities = transformedData.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+          }));
+          setQuantities(updatedQuantities);
+          SetIsEmpty(false);
+        } catch (error) {
+          console.error("Failed to load cart items:", error);
+          SetIsEmpty(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, [userData])
+  );
 
   const increment = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) + 1,
-    }));
+    setQuantities((prevQuantities) =>
+      prevQuantities.map((q) => {
+        if (q.id === id) {
+          return { ...q, quantity: q.quantity + 1 };
+        }
+        return q;
+      })
+    );
   };
 
   const decrement = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: prevQuantities[id] > 1 ? prevQuantities[id] - 1 : 1,
-    }));
+    setQuantities((prevQuantities) =>
+      prevQuantities.map((q) => {
+        if (q.id === id) {
+          return {
+            ...q,
+            quantity: q.quantity - 1 > 0 ? q.quantity - 1 : 1,
+          };
+        }
+        return q;
+      })
+    );
   };
 
   const calculateTotalPrice = () => {
-    return (
-      "₪ " +
-      Items.reduce((total, item) => {
-        const quantity = quantities[item.id] || 1;
-        const price = parseFloat(item.price.replace("₪", "").replace(",", ""));
-        return total + price * quantity;
-      }, 0).toFixed(2)
-    );
+    let total = 0;
+
+    // Loop through each cart item:
+    cartItems.forEach((item) => {
+      // Find this item's quantity from state
+      const foundQuantity = quantities.find((q) => q.id === item.id);
+      const quantity = foundQuantity ? foundQuantity.quantity : item.quantity;
+
+      // Parse net_price (remove any '₪' or commas), fallback to 0 if invalid
+      let netPrice =
+        parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
+
+      // If net_price is 0 or missing, use gross_price / 2
+      if (!netPrice || netPrice === 0) {
+        const grossPrice =
+          parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
+        netPrice = grossPrice / 2;
+      }
+
+      // Sum up: netPrice * quantity
+      total += netPrice * quantity;
+    });
+
+    // Return formatted string
+    return "₪ " + total.toFixed(2);
   };
   const hendelOnClick = () => {};
 
+  const handleRemovFromCart = async (itemId, itemSKU) => {
+    setRemovingItem((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToBy: 0,
+      });
+
+      console.log("Removed from cart:", response);
+
+      setCartItems((prevCartItems) => {
+        const newCartItems = prevCartItems.filter(
+          (cartItem) => cartItem.id !== itemId
+        );
+        // If there are no items left, mark cart as empty
+        if (newCartItems.length === 0) {
+          SetIsEmpty(true);
+        }
+        return newCartItems;
+      });
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.filter((q) => q.id !== itemId)
+      );
+    } catch (e) {
+      console.log("Failed to remove item:", e);
+    } finally {
+      setRemovingItem((prev) => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handleUpdateFromCart = async (itemId, itemSKU, newQuantity) => {
+    setUpdatingItem((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToBy: newQuantity,
+      });
+
+      console.log("Update the cart:", response);
+
+      setCartItems((prevCartItems) =>
+        prevCartItems.map((item) =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } catch (e) {
+      console.log("Failed to Update item:", e);
+    } finally {
+      setUpdatingItem((prev) => ({ ...prev, [itemId]: false }));
+    }
+  };
+
   const renderItem = ({ item }) => {
-    const quantity = quantities[item.id] || 1;
+    const netPriceNumber =
+      parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
+    const grossPriceNumber =
+      parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
+    const displayPrice =
+      netPriceNumber !== 0 ? netPriceNumber : grossPriceNumber / 2;
+
+    const handleQuantityChange = (text, id) => {
+      // השארת ספרות בלבד
+      const numericValue = text.replace(/[^0-9]/g, "");
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => {
+          if (q.id === id) {
+            // בדיקה אם הערך ריק או שווה ל-0
+            const newQuantity =
+              !numericValue || parseInt(numericValue, 10) === 0
+                ? 1
+                : parseInt(numericValue, 10);
+
+            return {
+              ...q,
+              quantity: newQuantity,
+            };
+          }
+          return q;
+        })
+      );
+    };
+    const foundQuantity = quantities.find((q) => q.id === item.id);
+    const quantity = foundQuantity ? foundQuantity.quantity : item.quantity;
+
+    const handleRemoveItemClick = () => {
+      handleRemovFromCart(item.id, item.SKU);
+    };
+
+    const handleUpdateItemClick = () => {
+      handleUpdateFromCart(item.id, item.SKU, quantity);
+    };
 
     return (
       <View style={Cardstyles.card}>
@@ -123,7 +253,14 @@ const CartScreen = ({ navigation }) => {
             </View>
           </View>
           <View style={Cardstyles.imageData}>
-            <Image style={Cardstyles.image} source={{ uri: item.image }} />
+            <Image
+              style={Cardstyles.image}
+              source={{
+                uri: `http://app.record.a-zuzit.co.il:8085/media/${
+                  item.image
+                }.jpg?timestamp=${Date.UTC()}`,
+              }}
+            />
           </View>
         </View>
 
@@ -133,34 +270,77 @@ const CartScreen = ({ navigation }) => {
               onPress={() => decrement(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Minus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Minus.png")} />
             </TouchableOpacity>
 
-            <Text style={Cardstyles.quantityText}>{quantity}</Text>
+            <TextInput
+              style={Cardstyles.quantityInput}
+              value={quantity.toString()}
+              onChangeText={(text) => handleQuantityChange(text, item.id)}
+              keyboardType="numeric"
+              selectTextOnFocus={true}
+            />
 
             <TouchableOpacity
               onPress={() => increment(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Plus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Plus.png")} />
             </TouchableOpacity>
           </View>
-
-          <View style={Cardstyles.removeButtonContainer}>
-            <TouchableOpacity style={Cardstyles.removeButton}>
-              <Text style={Cardstyles.removeButtonText}>הסר</Text>
-            </TouchableOpacity>
-          </View>
+          {quantity == item.quantity ? (
+            <View style={Cardstyles.removeButtonContainer}>
+              <TouchableOpacity
+                style={Cardstyles.removeButton}
+                onPress={handleRemoveItemClick}
+                disabled={!!removingItem[item.id]}
+              >
+                {removingItem[item.id] ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={Cardstyles.removeButtonText}>הסר</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={Cardstyles.removeButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  Cardstyles.removeButton,
+                  { backgroundColor: "#45f248", marginRight: 10 },
+                ]}
+                onPress={handleUpdateItemClick}
+                disabled={!!updatingItem[item.id]} // הטעינה רק לפריט הזה
+              >
+                {updatingItem[item.id] ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={Cardstyles.removeButtonText}>עדכן</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={Cardstyles.removeButton}
+                onPress={handleRemoveItemClick}
+                disabled={!!removingItem[item.id]}
+              >
+                {removingItem[item.id] ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={Cardstyles.removeButtonText}>הסר</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
+
         <View style={Cardstyles.priceView}>
-          <Text style={Cardstyles.priceText}>X {quantity}</Text>
-          <Text style={Cardstyles.priceText}>{item.price}</Text>
+          <View style={Cardstyles.priceView}>
+            <Text style={Cardstyles.priceText}>X {quantity}</Text>
+            {/* show '₪ ...' plus the decided price */}
+            <Text style={Cardstyles.priceText}>
+              ₪ {displayPrice.toFixed(2)}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -195,38 +375,57 @@ const CartScreen = ({ navigation }) => {
           >
             <Text style={{ fontSize: 30, fontWeight: "bold" }}>עגלת קניות</Text>
           </View>
+
           <View style={styles.ItemsSeparator} />
-          <View style={{ flex: 7.1 }}>
-            <FlatList
-              data={Items}
-              renderItem={({ item }) => renderItem({ item })}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => (
-                <View style={styles.ItemsSeparator} />
-              )}
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
-          <View style={styles.Separator} />
-          <View style={{ flex: 1.4 }}>
-            <View style={styles.totalPriceView}>
-              <Text style={styles.totalPriceLabel}>שווי ההזמנה :</Text>
-              <Text style={styles.totalPriceValue}>
-                {calculateTotalPrice()}
-              </Text>
-            </View>
+
+          {loading ? (
             <View
               style={{
-                width: "90%",
+                height: height * 0.78,
                 alignContent: "center",
-                alignItems: "center",
-                alignSelf: "center",
-                top: 20,
+                justifyContent: "center",
               }}
             >
-              <Button title="המשך לקופה" onPress={hendelOnClick} />
+              <View style={{ transform: [{ scale: 2 }] }}>
+                <ActivityIndicator size="large" color="#ED2027" />
+              </View>
             </View>
-          </View>
+          ) : (
+            <>
+              <View style={{ flex: 7.1 }}>
+                <FlatList
+                  data={cartItems}
+                  renderItem={({ item }) => renderItem({ item })}
+                  keyExtractor={(item) => item.id}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.ItemsSeparator} />
+                  )}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+
+              <View style={styles.Separator} />
+              <View style={{ flex: 1.4 }}>
+                <View style={styles.totalPriceView}>
+                  <Text style={styles.totalPriceLabel}>שווי ההזמנה :</Text>
+                  <Text style={styles.totalPriceValue}>
+                    {calculateTotalPrice()}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    width: "90%",
+                    alignContent: "center",
+                    alignItems: "center",
+                    alignSelf: "center",
+                    top: 20,
+                  }}
+                >
+                  <Button title="המשך לקופה" onPress={hendelOnClick} />
+                </View>
+              </View>
+            </>
+          )}
         </View>
       )}
     </>
@@ -258,7 +457,7 @@ const Cardstyles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   haderText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
   },
   infoView: {
@@ -291,18 +490,22 @@ const Cardstyles = StyleSheet.create({
     resizeMode: "contain", // Adjust image aspect ratio
   },
   orderQuantity: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
-    // alignSelf: "center",
-    justifyContent: "space-between",
-    width: 130,
-    height: 50,
+    flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
+    alignItems: "center", // Vertically align the items
+    alignSelf: "center",
+    alignContent: "center",
+    justifyContent: "center",
+    // justifyContent: "space-between", // Equal spacing between items
+    width: 100, // Increased width to accommodate buttons and input
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 15,
   },
   button: {
-    padding: 15,
+    paddingVertical: 8, // Match vertical padding for better button size
+    justifyContent: "center", // Center align the content
+    alignItems: "center",
   },
   quantityText: {
     fontSize: 20,
@@ -310,10 +513,14 @@ const Cardstyles = StyleSheet.create({
   },
   removeButtonContainer: {
     marginLeft: 10, // Adds spacing between the remove button and quantity selector
+    justifyContent: "center", //
+    flexDirection: "row",
+    alignContent: "center",
+    alignItems: "center",
   },
   removeButton: {
-    width: 100,
-    height: 50, // Same height as the orderQuantity container
+    width: 80,
+    height: 30, // Same height as the orderQuantity container
     backgroundColor: "#EBEDF5",
     borderRadius: 15,
     justifyContent: "center",
@@ -339,6 +546,19 @@ const Cardstyles = StyleSheet.create({
     fontWeight: "bold",
     color: "black",
     color: "#1A2540",
+  },
+  quantityInput: {
+    width: 50, // Adjust width to balance between buttons
+    height: 30, // Reduce height for better fit within the container
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: "white",
+    borderRadius: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    backgroundColor: "#fff",
+    marginHorizontal: 5, // Space between the input and buttons
   },
 });
 

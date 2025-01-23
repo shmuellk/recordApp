@@ -7,6 +7,7 @@ import {
   Dimensions,
   Image,
   FlatList,
+  TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   I18nManager,
@@ -14,44 +15,68 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
-const PopUp = ({ data, onClose, title }) => {
-  const renderRow = ({ item }) => (
-    <View style={styles.tableRow}>
-      <Text style={styles.tableCell1}>{item.manufacturer}</Text>
-      <Text style={styles.tableCell2}>{item.years}</Text>
-      <Text style={styles.tableCell3}>{item.comments}</Text>
-    </View>
-  );
+const PopUp = ({ data, onClose, title, subTitle }) => {
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.modalOverlay}>
-        {/* Close the modal when touching outside the popup */}
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.backgroundOverlay} />
-        </TouchableWithoutFeedback>
+    // <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <View style={styles.modalOverlay}>
+      {/* Close the modal when touching outside the popup */}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.backgroundOverlay} />
+      </TouchableWithoutFeedback>
 
-        {/* Popup content */}
-        <View style={styles.popupContainer}>
-          {/* Close button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Image source={require("../assets/icons/searchIcons/Close.png")} />
-          </TouchableOpacity>
-          <Text style={styles.header}>{title}</Text>
-
+      {/* Popup content */}
+      <View style={styles.popupContainer}>
+        {/* Close button */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Image source={require("../assets/icons/searchIcons/Close.png")} />
+        </TouchableOpacity>
+        <Text style={styles.header}>
+          {title} : {subTitle}
+        </Text>
+        {data[0] && (
           <View style={styles.tableHeader}>
             <Text style={styles.tableHeaderCell1}>יצרן</Text>
             <Text style={styles.tableHeaderCell2}>שנים</Text>
             <Text style={styles.tableHeaderCell3}>הערות</Text>
           </View>
+        )}
+        {data[0] && (
           <FlatList
             data={data} // Filtered data passed as props
             keyExtractor={(item, index) => index.toString()} // Assume data is a list of strings
             showsVerticalScrollIndicator={false}
-            renderItem={renderRow}
+            renderItem={({ item }) => (
+              <View style={styles.tableRow}>
+                <Text style={styles.tableCell1}>{item.model}</Text>
+                <Text style={styles.tableCell2}>
+                  {item.from_year} - {item.until_year}
+                </Text>
+                {item.car_note && (
+                  <Text style={styles.tableCell3}>{item.car_note}</Text>
+                )}
+                {!item.car_note && (
+                  <Text style={[styles.tableCell3, { textAlign: "center" }]}>
+                    -
+                  </Text>
+                )}
+              </View>
+            )}
           />
-        </View>
+        )}
+        {!data[0] && (
+          <Text
+            style={{
+              fontSize: 20,
+              alignSelf: "center",
+              padding: 50,
+            }}
+          >
+            לא קיים מידע במערכת
+          </Text>
+        )}
       </View>
-    </TouchableWithoutFeedback>
+    </View>
+    // </TouchableWithoutFeedback>
   );
 };
 

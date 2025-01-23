@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,53 @@ import {
   TouchableOpacity,
   I18nManager,
 } from "react-native";
+import itemCardModel from "../model/itemCardModel";
 
-const renderItem = ({ item, navigation }) => {
-  const hendelOnPress = () => {
+const renderItem = ({ item, navigation, carData }) => {
+  const hendelOnPress = async () => {
     // Navigate to the ItemCardScreen, passing item details as parameters
-    navigation.navigate("ItemCardScreen", { item });
+    if (carData) {
+      try {
+        const Brand = await itemCardModel.getItemBrandByCar({
+          CHILD_GROUP: item.CHILD_GROUP,
+          DESCRIPTION_NOTE: item.DESCRIPTION_NOTE,
+          MANUFACTURER: carData.MANUFACTURER,
+          MODEL: carData.MODEL,
+          MANUFACTURE_YEAR: carData.MANUFACT,
+          YEAR_LIMIT: carData.YEAR_LIMIT,
+          GEAR: carData.GEAR,
+          BODY: carData.BODY,
+          DOORS: carData.DOORS,
+          ENGINE_MODEL: carData.ENGINE_MODEL,
+          PROPULSION: carData.PROPULSION,
+          NOTE: carData.NOTE,
+        });
+        console.log("====================================");
+        console.log("Brand - getItemBrandByCar: " + JSON.stringify(Brand));
+        console.log("====================================");
+        navigation.navigate("ItemCardScreen", { item, Brand });
+      } catch (error) {
+        console.log("====================================");
+        console.log("Error: " + error);
+        console.log("====================================");
+      }
+    } else {
+      try {
+        const Brand = await itemCardModel.getItemBrand({
+          CATALOG_NUMBER: item.CATALOG_NUMBER,
+          CHILD_GROUP: item.CHILD_GROUP,
+          DESCRIPTION_NOTE: item.DESCRIPTION_NOTE,
+        });
+        console.log("====================================");
+        console.log("Brand - getItemBrand: " + JSON.stringify(Brand));
+        console.log("====================================");
+        navigation.navigate("ItemCardScreen", { item, Brand });
+      } catch (error) {
+        console.log("====================================");
+        console.log("Error: " + error);
+        console.log("====================================");
+      }
+    }
   };
 
   return (
@@ -42,7 +84,17 @@ const renderItem = ({ item, navigation }) => {
           <Text style={styles.ItemInfoText}>{item.CAR_NOTE}</Text>
         </View>
         <View style={styles.ItemImag}>
-          <Image style={styles.image} source={{ uri: item.IMAGE }} />
+          <Image
+            style={styles.image}
+            source={{
+              uri: `http://app.record.a-zuzit.co.il:8085/media/${
+                item.IMAGE
+              }.jpg?timestamp=${Date.UTC()}`,
+            }}
+            onError={(error) =>
+              console.log("Image Load Error in: ", error.nativeEvent.error)
+            }
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -55,7 +107,7 @@ const styles = StyleSheet.create({
   ItemList: {
     flexDirection: "column",
     backgroundColor: "white",
-    height: 180,
+    maxHeight: 180,
     width: "95%",
     alignContent: "center",
     alignItems: "center",
@@ -73,7 +125,7 @@ const styles = StyleSheet.create({
   ItemInfo: {
     flex: 6,
     alignSelf: "flex-end",
-    bottom: 10,
+    bottom: 6,
   },
   ItemImag: { flex: 4 },
   ItemInfoText: {
@@ -83,10 +135,10 @@ const styles = StyleSheet.create({
     textAlign: I18nManager.isRTL ? "left" : "right",
   },
   image: {
+    bottom: 6,
     width: 100,
     height: 100,
     position: "absolute",
-    bottom: 10,
     right: 10,
     resizeMode: "contain",
   },

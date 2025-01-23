@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,52 +8,77 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
+  TextInput,
 } from "react-native";
 
 import Button from "../components/Button";
 import InfoButton from "../components/InfoButton";
+import carModel from "../model/carsModel";
+import cartModel from "../model/cartModel";
 
 const { width, height } = Dimensions.get("window");
 
 const ItemCardScreen = ({ route, navigation }) => {
-  const { item } = route.params || {}; // Default to an empty object if item is undefined
+  const { item, Brand, userData, carInfo } = route.params || {}; // Default to an empty object if item is undefined
   const [star, setStar] = useState(false);
   const [armor, setArmor] = useState(false);
-  const [inStock, setInStock] = useState(true);
-  const [quantity, setQuantity] = useState(1);
-  const [selectedBrand, setSelectedBrand] = useState("aaa");
-  const brand = [
-    {
-      imag: require("../assets/icons/itemCard/categoris/skf.png"),
-      name: "aaa",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/monro.png"),
-      name: "bbb",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/ironman.png"),
-      name: "ccc",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/optimal.png"),
-      name: "ddd",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/optimal.png"),
-      name: "eee",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/optimal.png"),
-      name: "fff",
-    },
-    {
-      imag: require("../assets/icons/itemCard/categoris/optimal.png"),
-      name: "ggg",
-    },
-  ];
+  const [inStock, setInStock] = useState(Brand[0].quantity > 0 ? true : false);
+  const [infoByBrand, setInfoByBrand] = useState(Brand[0] || []);
+  const [timestamp] = useState(Date.now());
+  const [selectedBrand, setSelectedBrand] = useState(
+    Brand[0].catalog_number || ""
+  );
+  const [amountToBy, setAmountToBy] = useState(1);
+  const [searchLoading, setSearchLoading] = useState(false); // Loader state for search button
 
-  const hendelOnPress = () => {};
+  const numericNetPrice =
+    parseFloat(String(infoByBrand.net_price).replace(/[^\d.]/g, "")) || 0;
+  const numericGrossPrice =
+    parseFloat(String(infoByBrand.gross_price).replace(/[^\d.]/g, "")) || 0;
+
+  // Make copies we can modify
+  let finalNet = numericNetPrice;
+  let finalGross = numericGrossPrice;
+
+  // Decide what to show
+  let showNet = true;
+  let showGross = true;
+
+  if (finalGross === 0 && finalNet !== 0) {
+    // 1) if gross_price = 0, show only net_price
+    showGross = false;
+  } else if (finalNet === 0 && finalGross !== 0) {
+    // 2) if net_price = 0, set net_price = gross_price / 2 and show both
+    finalNet = finalGross / 2;
+  } else if (finalNet === 0 && finalGross === 0) {
+    // 3) if both are 0, you can choose to show neither
+    showNet = false;
+    showGross = false;
+  }
+  const addToCart = async () => {
+    setSearchLoading(true);
+    try {
+      const response = await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: infoByBrand.catalog_number,
+        amountToBy: amountToBy,
+      });
+      console.log("====================================");
+      console.log(response);
+      console.log("====================================");
+    } catch (e) {
+      console.log("====================================");
+      console.log(e);
+      console.log("====================================");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleQuantityChange = (text) => {
+    setAmountToBy(text);
+  };
 
   const handleArmorToggle = () => {
     setArmor((prevArmor) => !prevArmor);
@@ -64,26 +89,44 @@ const ItemCardScreen = ({ route, navigation }) => {
   };
 
   const increment = () => {
-    setQuantity((prevQuantity) => prevQuantity + 1);
+    setAmountToBy((prevQuantity) => prevQuantity + 1);
   };
 
   const decrement = () => {
-    setQuantity((prevQuantity) => (prevQuantity > 1 ? prevQuantity - 1 : 1));
+    setAmountToBy((prevQuantity) => (prevQuantity > 1 ? prevQuantity - 1 : 1));
   };
 
-  const handleOnPressBrand = (brandName) => {
-    setSelectedBrand(brandName); // Update the selected brand when an item is pressed
+  const handleOnPressBrand = async (item) => {
+    if (item.quantity > 0) {
+      setInStock(true);
+    } else {
+      setInStock(false);
+    }
+    setSelectedBrand(item.catalog_number);
+    setInfoByBrand(item);
+    setAmountToBy(1);
   };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[
         styles.itemContainer,
-        { backgroundColor: selectedBrand === item.name ? "#EBEDF5" : "white" }, // Change background color if selected
+        {
+          backgroundColor:
+            selectedBrand === item.catalog_number ? "#EBEDF5" : "white",
+        }, // Change background color if selected
       ]}
-      onPress={() => handleOnPressBrand(item.name)} // Set selected brand when pressed
+      onPress={() => handleOnPressBrand(item)} // Set selected brand when pressed
     >
-      <Image source={item.imag} style={styles.brandImage} />
+      <Image
+        style={styles.brandImage}
+        source={{
+          uri: `http://app.record.a-zuzit.co.il:8085/media/${item.brand}.jpg?timestamp=${timestamp}`,
+        }}
+        onError={(error) =>
+          console.log("Image Load Error in: ", error.nativeEvent.error)
+        }
+      />
     </TouchableOpacity>
   );
 
@@ -99,9 +142,38 @@ const ItemCardScreen = ({ route, navigation }) => {
         <Image
           style={styles.image}
           source={{
-            uri: "https://d3m9l0v76dty0.cloudfront.net/system/photos/2803846/large/04d9c97b690e4c29131d1525a9aaec41.jpg",
+            uri: `http://app.record.a-zuzit.co.il:8085/media/${item.IMAGE}.jpg?timestamp=${timestamp}`,
           }}
+          onError={(error) =>
+            console.log("Image Load Error in: ", error.nativeEvent.error)
+          }
         />
+      </View>
+
+      <View
+        style={{
+          height: 40,
+          backgroundColor: "rgba(235, 237, 245, 0.4)",
+          position: "absolute",
+          zIndex: 99999,
+          borderRadius: 10,
+          justifyContent: "center",
+          alignItems: "center",
+          alignContent: "center",
+          alignSelf: "center",
+          top: height * 0.04,
+        }}
+      >
+        {infoByBrand.teeth && (
+          <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+            {infoByBrand.teeth}
+          </Text>
+        )}
+        {infoByBrand.size && (
+          <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+            {infoByBrand.size}
+          </Text>
+        )}
       </View>
 
       {/* Product Information with Star Icon on the left and Product Title on the right */}
@@ -123,31 +195,39 @@ const ItemCardScreen = ({ route, navigation }) => {
 
               {/* Product Title (right-aligned) */}
               <Text style={styles.productTitle}>
-                {item.name || "Product Title"}
+                {item.CHILD_GROUP + " " + item.DESCRIPTION_NOTE}
               </Text>
             </View>
 
             {/* SKU and Brand Info */}
             <Text style={styles.skuText}>
-              מק"ט: {item.sku || "DAC 45840039 ABS"}
+              מק"ט: {infoByBrand.catalog_number}
             </Text>
-            <Text style={styles.brandText}>
-              מותג: {item.brand || "OPTIMAL"}
-            </Text>
+            <Text style={styles.brandText}>מותג: {infoByBrand.brand}</Text>
             {/* Price Section */}
             <View
               style={{
                 flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                top: 10,
                 alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
               }}
             >
-              <Text style={styles.priceText}>
-                מחיר ברוטו: <Text style={styles.priceValue}>₪15.00</Text>
-              </Text>
-              <Text style={styles.priceText}>
-                מחיר נטו: <Text style={styles.priceValue}>₪93.00</Text>
-              </Text>
+              {/* Show Gross Price if showGross === true */}
+              {showGross && (
+                <Text style={styles.priceText}>
+                  מחיר ברוטו:{" "}
+                  <Text style={styles.priceValue}>
+                    ₪ {finalGross.toFixed(2)}
+                  </Text>
+                </Text>
+              )}
+
+              {/* Show Net Price if showNet === true */}
+              {showNet && (
+                <Text style={styles.priceText}>
+                  מחיר נטו:{" "}
+                  <Text style={styles.priceValue}>₪ {finalNet.toFixed(2)}</Text>
+                </Text>
+              )}
             </View>
           </View>
         ) : (
@@ -166,7 +246,13 @@ const ItemCardScreen = ({ route, navigation }) => {
                 />
               </TouchableOpacity>
 
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <TextInput
+                style={styles.quantityInput}
+                value={amountToBy.toString()}
+                onChangeText={(text) => handleQuantityChange(text)}
+                keyboardType="numeric"
+                selectTextOnFocus={true}
+              />
 
               <TouchableOpacity onPress={increment} style={styles.button}>
                 <Image
@@ -200,11 +286,11 @@ const ItemCardScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.brandView}>
           <FlatList
-            data={brand}
+            data={Brand}
             renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()}
             horizontal={true} // Enable horizontal scrolling
-            inverted={I18nManager.isRTL ? false : true}
+            inverted={I18nManager.isRTL ? true : false}
             showsHorizontalScrollIndicator={false} // Optional: Hide the scroll indicator
           />
         </View>
@@ -220,7 +306,12 @@ const ItemCardScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.AddCartButtonView}>
-          <Button title={"הוסף לעגלה"} onPress={hendelOnPress} />
+          <Button
+            title={"הוסף לעגלה"}
+            onPress={addToCart}
+            loading={searchLoading}
+            enable={inStock}
+          />
         </View>
       </View>
     </View>
@@ -257,9 +348,9 @@ const styles = StyleSheet.create({
     marginBottom: 5, // Space between title and other information
   },
   productTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#1A2540",
+    color: "#3A5683",
     textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment for the title
     flex: 1, // Allow the title to take up the remaining space
   },
@@ -267,13 +358,13 @@ const styles = StyleSheet.create({
     marginRight: 10, // Place the star icon on the left side
   },
   skuText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#1A2540",
     marginBottom: 5,
     textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment
   },
   brandText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#7E7D83",
     textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment
   },
@@ -298,12 +389,13 @@ const styles = StyleSheet.create({
   priceValue: {
     fontWeight: "bold",
     color: "#1A2540", // Stronger color for price value
-    fontSize: 20,
+    fontSize: 16,
   },
   image: {
     width: 300, // Adjust as per your requirement
     height: 300, // Adjust as per your requirement
     resizeMode: "contain", // Keep the aspect ratio
+    top: 50,
   },
   brandView: { padding: 10, flex: 5, top: height * 0.01 },
   amountView: {
@@ -378,6 +470,19 @@ const styles = StyleSheet.create({
     right: I18nManager.isRTL ? 0 : 20,
     top: 55, // Adjusted to be within the header
     zIndex: 1,
+  },
+  quantityInput: {
+    width: 50, // Adjust width to balance between buttons
+    height: 30, // Reduce height for better fit within the container
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: "white",
+    borderRadius: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    backgroundColor: "#fff",
+    marginHorizontal: 5, // Space between the input and buttons
   },
 });
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { IP } from "@env";
+const IP = "http://128.140.125.244:8080";
 
 const getManufacturer = async () => {
   try {
@@ -14,7 +14,7 @@ const getManufacturer = async () => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getManufacturer request:", error.message);
     return null;
   }
 };
@@ -24,7 +24,7 @@ const getAllModel = async (data) => {
   try {
     let response = await axios.get(`${IP}/filter/getAllModel`, {
       params: {
-        MANUFACTURER,
+        Manufacturer: MANUFACTURER,
       },
     });
     if (response.status === 200) {
@@ -35,7 +35,7 @@ const getAllModel = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllModel request:", error.message);
     return null;
   }
 };
@@ -59,7 +59,7 @@ const getAllmanufactureYear = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllmanufactureYear request:", error.message);
     return null;
   }
 };
@@ -85,7 +85,7 @@ const getAllEngineModel = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllEngineModel request:", error.message);
     return null;
   }
 };
@@ -111,7 +111,7 @@ const getAllCapacity = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllCapacity request:", error.message);
     return null;
   }
 };
@@ -139,7 +139,7 @@ const getAllGas = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllGas request:", error.message);
     return null;
   }
 };
@@ -169,7 +169,7 @@ const getAllGear = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllGear request:", error.message);
     return null;
   }
 };
@@ -201,7 +201,7 @@ const getAllPropulsion = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllPropulsion request:", error.message);
     return null;
   }
 };
@@ -235,7 +235,7 @@ const getAllDoors = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllDoors request:", error.message);
     return null;
   }
 };
@@ -271,7 +271,38 @@ const getAllBooy = async (data) => {
       return null;
     }
   } catch (error) {
-    console.error("Error during getItemCode request:", error.message);
+    console.error("Error during getAllBooy request:", error.message);
+    return null;
+  }
+};
+
+const getAlternativeSKU = async (data) => {
+  const SKU = data.SKU;
+  try {
+    let response = await axios.get(`${IP}/filter/getAlternativeSKU`, {
+      params: {
+        SKU,
+      },
+    });
+    if (response.status === 200) {
+      let tempArray = response.data.result
+        .map((item) => item.result_value.split(",")) // Split each result_value by commas
+        .flat() // Flatten the nested arrays into one array
+        .map((item) => item.trim()) // Remove any extra spaces around items
+        .filter(
+          (item, index, self) =>
+            self.findIndex((i) => i.toLowerCase() === item.toLowerCase()) ===
+            index // Ensure distinct (case-insensitive)
+        )
+        .filter((item) => item.toLowerCase().includes(SKU.toLowerCase())) // Case-insensitive filtering
+        .slice(0, 10); // Take the first 10 items
+      return tempArray;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error during getAlternativeSKU request:", error.message);
     return null;
   }
 };
@@ -287,5 +318,6 @@ const filterModel = {
   getAllPropulsion,
   getAllDoors,
   getAllBooy,
+  getAlternativeSKU,
 };
 export default filterModel;

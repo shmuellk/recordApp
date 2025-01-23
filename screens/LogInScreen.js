@@ -13,6 +13,7 @@ import {
 import COLORS from "../components/colors"; // Ensure this path is correct
 import Button from "../components/Button";
 import Input from "../components/lnputs";
+import usersModel from "../model/usersModel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,8 +38,25 @@ const LogInScreen = ({ navigation }) => {
     Keyboard.dismiss();
   };
 
-  const logIn = () => {
-    navigation.navigate("App", { userName: inputs.userName });
+  const logIn = async () => {
+    try {
+      const response = await usersModel.login({
+        userName: inputs.userName,
+        Password: inputs.password,
+      });
+
+      if (response.length > 0) {
+        navigation.navigate("App", { userData: response[0] });
+      } else {
+        handleError("שם משתמש או סיסמא שגויים", "password");
+      }
+    } catch (err) {
+      console.log("====================================");
+      console.log("error = " + err);
+      console.log("====================================");
+    }
+
+    // navigation.navigate("App", { userName: inputs.userName });
   };
 
   return (

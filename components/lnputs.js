@@ -88,7 +88,7 @@ const Input = forwardRef(
           <Text
             style={[
               styles.errorText,
-              { textAlign: I18nManager.isRTL ? "right" : "left" }, // Adjust error alignment
+              { textAlign: I18nManager.isRTL ? "left" : "right" }, // Adjust error alignment
             ]}
           >
             {error}

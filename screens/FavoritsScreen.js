@@ -8,6 +8,7 @@ import {
   Image,
   FlatList,
   I18nManager,
+  TextInput,
 } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
 const { width, height } = Dimensions.get("window");
@@ -101,7 +102,6 @@ const FavoritsScreen = ({ navigation }) => {
                 <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
                 <Text style={Cardstyles.infoText}>{item.SKU}</Text>
               </View>
-
               <View style={{ flexDirection: "row" }}>
                 <Text style={Cardstyles.infoTitle}>מחיר : </Text>
                 <Text style={Cardstyles.infoText}>{item.price}</Text>
@@ -119,52 +119,65 @@ const FavoritsScreen = ({ navigation }) => {
               onPress={() => decrement(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Minus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Minus.png")} />
             </TouchableOpacity>
 
-            <Text style={Cardstyles.quantityText}>{quantity}</Text>
+            <TextInput
+              style={Cardstyles.quantityInput}
+              value={quantity.toString()}
+              onChangeText={(text) => handleQuantityChange(text, item.id)}
+              keyboardType="numeric"
+              selectTextOnFocus={true}
+              onBlur={() => {
+                if (!quantities[item.id]) {
+                  // Default to 1 if input is empty
+                  setQuantities((prevQuantities) => ({
+                    ...prevQuantities,
+                    [item.id]: 1,
+                  }));
+                }
+              }}
+            />
 
             <TouchableOpacity
               onPress={() => increment(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Plus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Plus.png")} />
             </TouchableOpacity>
           </View>
-          <View
-            style={{
-              paddingLeft: 10,
-            }}
-          >
-            <TouchableOpacity
+          {item.amount > 0 && (
+            <View
               style={{
-                backgroundColor: "#1A2540",
-                width: 100, // Same width as the remove button
-                height: 50, // Same height as the remove button
-                borderRadius: 15, // Same border radius as the remove button
+                paddingLeft: 10,
                 justifyContent: "center",
-                alignItems: "center",
               }}
             >
-              <Text
-                style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#1A2540",
+                  width: 100, // Same width as the remove button
+                  height: 40, // Same height as the remove button
+                  borderRadius: 15, // Same border radius as the remove button
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
               >
-                הוסף לעגלה
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+                >
+                  הוסף לעגלה
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={Cardstyles.removeButtonContainer}>
             <TouchableOpacity style={Cardstyles.removeButton}>
               <Text style={Cardstyles.removeButtonText}>הסר</Text>
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={Cardstyles.priceView}></View>
       </View>
     );
@@ -237,6 +250,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  ItemsSeparator: {
+    height: 1.5,
+    width: width * 0.9,
+    alignSelf: "center",
+    backgroundColor: "#EBEDF5",
+  },
+  ItemsSeparatorFirst: {
+    height: 1.5,
+    width: width,
+    alignSelf: "center",
+    backgroundColor: "#EBEDF5",
+  },
   emptyCartView: {
     justifyContent: "center",
     alignItems: "center",
@@ -266,12 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#7E7D83",
   },
-  ItemsSeparator: {
-    height: 1.5,
-    width: width,
-    alignSelf: "center",
-    backgroundColor: "#EBEDF5",
-  },
+
   rightButton: {
     position: "absolute",
     right: 20,
@@ -304,7 +324,8 @@ const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
     width: width,
-    height: height * 0.25,
+    minHeight: 160,
+    maxHeight: 200,
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
@@ -323,19 +344,27 @@ const Cardstyles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   haderText: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: "bold",
   },
+  infoView: {
+    flexDirection: "row",
+    marginTop: 5,
+    marginBottom: 5,
+  },
   infoText: {
-    fontSize: 18,
+    fontSize: 15,
     color: "#7E7D83",
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#1A2540",
     fontWeight: "bold",
   },
-
+  leftText: {
+    alignItems: "flex-start",
+    marginRight: 10,
+  },
   imageData: {
     flex: 3,
     alignItems: "center", // Centering the image
@@ -348,18 +377,23 @@ const Cardstyles = StyleSheet.create({
     resizeMode: "contain", // Adjust image aspect ratio
   },
   orderQuantity: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
-    // alignSelf: "center",
-    justifyContent: "space-between",
-    width: 130,
-    height: 50,
+    flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
+    alignItems: "center", // Vertically align the items
+    alignSelf: "center",
+    alignContent: "center",
+    justifyContent: "center",
+    // justifyContent: "space-between", // Equal spacing between items
+    width: 100, // Increased width to accommodate buttons and input
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 15,
   },
   button: {
-    padding: 15,
+    // paddingHorizontal: 3, // Adjust to reduce excessive padding
+    paddingVertical: 8, // Match vertical padding for better button size
+    justifyContent: "center", // Center align the content
+    alignItems: "center",
   },
   quantityText: {
     fontSize: 20,
@@ -367,10 +401,11 @@ const Cardstyles = StyleSheet.create({
   },
   removeButtonContainer: {
     marginLeft: 10, // Adds spacing between the remove button and quantity selector
+    justifyContent: "center", //
   },
   removeButton: {
     width: 100,
-    height: 50, // Same height as the orderQuantity container
+    height: 40, // Same height as the orderQuantity container
     backgroundColor: "#EBEDF5",
     borderRadius: 15,
     justifyContent: "center",
@@ -380,5 +415,34 @@ const Cardstyles = StyleSheet.create({
     color: "black",
     fontSize: 20,
     fontWeight: "bold",
+  },
+  priceView: {
+    position: "absolute",
+    bottom: 15,
+    right: 10,
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignContent: "center",
+    alignItems: "flex-start",
+  },
+  priceText: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "black",
+    color: "#1A2540",
+  },
+  quantityInput: {
+    width: 50, // Adjust width to balance between buttons
+    height: 30, // Reduce height for better fit within the container
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: "white",
+    borderRadius: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    backgroundColor: "#fff",
+    marginHorizontal: 5, // Space between the input and buttons
   },
 });

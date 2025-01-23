@@ -14,46 +14,65 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
-const PopUp = ({ data, onClose, title }) => {
-  const renderRow = ({ item }) => (
-    <View style={styles.tableRow}>
-      <Text style={styles.tableCell}>{item.date}</Text>
-      <Text style={styles.tableCell}>{item.quantity}</Text>
-      <Text style={styles.tableCell}>{item.gross_price}</Text>
-      <Text style={styles.tableCell}>{item.net_price}</Text>
-    </View>
-  );
+const PopUp = ({ data, onClose, title, subTitle }) => {
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.modalOverlay}>
-        {/* Close the modal when touching outside the popup */}
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.backgroundOverlay} />
-        </TouchableWithoutFeedback>
+    <View style={styles.modalOverlay}>
+      {/* Close the modal when touching outside the popup */}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.backgroundOverlay} />
+      </TouchableWithoutFeedback>
 
-        {/* Popup content */}
-        <View style={styles.popupContainer}>
-          {/* Close button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Image source={require("../assets/icons/searchIcons/Close.png")} />
-          </TouchableOpacity>
-          <Text style={styles.header}>{title}</Text>
+      {/* Popup content */}
+      <View style={styles.popupContainer}>
+        {/* Close button */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Image source={require("../assets/icons/searchIcons/Close.png")} />
+        </TouchableOpacity>
+        <Text style={styles.header}>
+          {title} : {subTitle}
+        </Text>
+        {/* <Text style={styles.header}>{subTitle}</Text> */}
 
+        {data[0] && (
           <View style={styles.tableHeader}>
             <Text style={styles.tableHeaderCell}>תאריך</Text>
             <Text style={styles.tableHeaderCell}>כמות</Text>
             <Text style={styles.tableHeaderCell}>מחיר ברוטו</Text>
             <Text style={styles.tableHeaderCell}>מחיר נטו</Text>
           </View>
+        )}
+        {data[0] && (
           <FlatList
+            keyboardShouldPersistTaps={"handled"}
             data={data} // Filtered data passed as props
             keyExtractor={(item, index) => index.toString()} // Assume data is a list of strings
             showsVerticalScrollIndicator={false}
-            renderItem={renderRow}
+            renderItem={({ item }) => (
+              <View style={styles.tableRow}>
+                <Text style={styles.tableCell}>
+                  {item.DOCDATE ? item.DOCDATE.split("T")[0] : ""}
+                </Text>
+                <Text style={styles.tableCell}>{item.QUANTITY}</Text>
+                <Text style={styles.tableCell}>{item.BRUTODOCTOTAL}</Text>
+                <Text style={styles.tableCell}>{item.NETDOCTOTAL}</Text>
+              </View>
+            )}
           />
-        </View>
+        )}
+
+        {!data[0] && (
+          <Text
+            style={{
+              fontSize: 20,
+              alignSelf: "center",
+              padding: 50,
+            }}
+          >
+            לא קיים מידע במערכת
+          </Text>
+        )}
       </View>
-    </TouchableWithoutFeedback>
+    </View>
   );
 };
 

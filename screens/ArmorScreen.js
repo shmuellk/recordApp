@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,8 @@ import {
   I18nManager,
   Image,
   TouchableOpacity,
+  TextInput,
+  Keyboard,
 } from "react-native";
 import Button from "../components/Button";
 
@@ -15,7 +17,6 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Using Io
 const { width, height } = Dimensions.get("window");
 
 const ArmorScreen = ({ navigation }) => {
-  const [isEmpty, SetIsEmpty] = useState(false);
   const [quantities, setQuantities] = useState({});
 
   const Items = [
@@ -92,7 +93,14 @@ const ArmorScreen = ({ navigation }) => {
   };
 
   const renderItem = ({ item }) => {
-    const quantity = quantities[item.id] || 1;
+    const handleQuantityChange = (text, id) => {
+      const numericValue = text.replace(/[^0-9]/g, ""); // Allow only numbers
+      setQuantities((prevQuantities) => ({
+        ...prevQuantities,
+        [id]: numericValue ? parseInt(numericValue, 10) : "", // Keep it empty if no input
+      }));
+    };
+    let quantity = quantities[item.id] || 1;
 
     return (
       <View style={Cardstyles.card}>
@@ -143,35 +151,45 @@ const ArmorScreen = ({ navigation }) => {
               onPress={() => decrement(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Minus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Minus.png")} />
             </TouchableOpacity>
 
-            <Text style={Cardstyles.quantityText}>{quantity}</Text>
+            <TextInput
+              style={Cardstyles.quantityInput}
+              value={quantity.toString()}
+              onChangeText={(text) => handleQuantityChange(text, item.id)}
+              keyboardType="numeric"
+              selectTextOnFocus={true}
+              onBlur={() => {
+                if (!quantities[item.id]) {
+                  // Default to 1 if input is empty
+                  setQuantities((prevQuantities) => ({
+                    ...prevQuantities,
+                    [item.id]: 1,
+                  }));
+                }
+              }}
+            />
 
             <TouchableOpacity
               onPress={() => increment(item.id)}
               style={Cardstyles.button}
             >
-              <Image
-                style={Cardstyles.buttonText}
-                source={require("../assets/icons/itemCard/Plus.png")}
-              />
+              <Image source={require("../assets/icons/itemCard/Plus.png")} />
             </TouchableOpacity>
           </View>
           {item.amount > 0 && (
             <View
               style={{
                 paddingLeft: 10,
+                justifyContent: "center",
               }}
             >
               <TouchableOpacity
                 style={{
                   backgroundColor: "#1A2540",
                   width: 100, // Same width as the remove button
-                  height: 50, // Same height as the remove button
+                  height: 40, // Same height as the remove button
                   borderRadius: 15, // Same border radius as the remove button
                   justifyContent: "center",
                   alignItems: "center",
@@ -191,13 +209,14 @@ const ArmorScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={Cardstyles.priceView}></View>
       </View>
     );
   };
   return (
     <>
-      {isEmpty ? (
+      {!Items ? (
         <View style={styles.container}>
           <View style={styles.emptyCartView}>
             <Icon
@@ -298,7 +317,7 @@ const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
     width: width,
-    height: height * 0.3,
+    height: 200,
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
@@ -317,7 +336,7 @@ const Cardstyles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   haderText: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: "bold",
   },
   infoView: {
@@ -326,11 +345,11 @@ const Cardstyles = StyleSheet.create({
     marginBottom: 5,
   },
   infoText: {
-    fontSize: 18,
+    fontSize: 15,
     color: "#7E7D83",
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#1A2540",
     fontWeight: "bold",
   },
@@ -350,18 +369,24 @@ const Cardstyles = StyleSheet.create({
     resizeMode: "contain", // Adjust image aspect ratio
   },
   orderQuantity: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
-    // alignSelf: "center",
-    justifyContent: "space-between",
-    width: 130,
-    height: 50,
+    flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
+    alignItems: "center", // Vertically align the items
+    alignSelf: "center",
+    alignContent: "center",
+    justifyContent: "center",
+    // justifyContent: "space-between", // Equal spacing between items
+    width: 100, // Increased width to accommodate buttons and input
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 15,
   },
+
   button: {
-    padding: 15,
+    // paddingHorizontal: 3, // Adjust to reduce excessive padding
+    paddingVertical: 8, // Match vertical padding for better button size
+    justifyContent: "center", // Center align the content
+    alignItems: "center",
   },
   quantityText: {
     fontSize: 20,
@@ -369,10 +394,11 @@ const Cardstyles = StyleSheet.create({
   },
   removeButtonContainer: {
     marginLeft: 10, // Adds spacing between the remove button and quantity selector
+    justifyContent: "center", //
   },
   removeButton: {
     width: 100,
-    height: 50, // Same height as the orderQuantity container
+    height: 40, // Same height as the orderQuantity container
     backgroundColor: "#EBEDF5",
     borderRadius: 15,
     justifyContent: "center",
@@ -398,5 +424,18 @@ const Cardstyles = StyleSheet.create({
     fontWeight: "bold",
     color: "black",
     color: "#1A2540",
+  },
+  quantityInput: {
+    width: 50, // Adjust width to balance between buttons
+    height: 30, // Reduce height for better fit within the container
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: "white",
+    borderRadius: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    backgroundColor: "#fff",
+    marginHorizontal: 5, // Space between the input and buttons
   },
 });

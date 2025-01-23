@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,153 +8,54 @@ import {
   Modal,
   I18nManager,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons"; // Using Ionicons for the left arrow
 import RecentShoppingPop from "./RecentShoppingPop";
 import AlternateSKUPop from "./AlternateSKUPop";
 import VehiclesPop from "./VehiclesPop";
+import itemCardModel from "../model/itemCardModel";
 
 const { width } = Dimensions.get("window");
 
 const InfoButton = ({ placeholder, type, car }) => {
   const [openPopUp, setOpenPopUp] = useState(false);
+  const [RecentShoppingPopData, setRecentShoppingPopData] = useState([]);
+  const [VehiclesPopData, setVehiclesPopData] = useState([]);
+  const [AlternateSKUPopData, setAlternateSKUPopData] = useState([]);
+  const fetchData = async () => {
+    try {
+      // Simulate fetching data (replace with your API or data-fetch logic)
+      if (type === 1) {
+        let data = await itemCardModel.getRecentShopping({
+          CATALOG_NUMBER: car.CATALOG_NUMBER,
+        });
+        setRecentShoppingPopData(data);
+      }
+      if (type === 2) {
+        let data = await itemCardModel.getCarsByItem({
+          CATALOG_NUMBER: car.CATALOG_NUMBER,
+        });
+        setVehiclesPopData(data);
+      }
+      if (type === 3) {
+        let data = await itemCardModel.getAlternativeSkus({
+          CATALOG_NUMBER: car.CATALOG_NUMBER,
+        });
+
+        setAlternateSKUPopData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [type]);
 
   // Toggle pop-up state
   const togglePopUp = () => {
     setOpenPopUp(!openPopUp);
   };
-  const RecentShoppingPopData = [
-    {
-      date: "03/05/2024",
-      quantity: 1,
-      gross_price: "₪90.72",
-      net_price: "₪90.52",
-    },
-    {
-      date: "22/02/2022",
-      quantity: 5,
-      gross_price: "₪95.48",
-      net_price: "₪94.11",
-    },
-    {
-      date: "26/03/2023",
-      quantity: 4,
-      gross_price: "₪93.74",
-      net_price: "₪91.25",
-    },
-    {
-      date: "22/02/2022",
-      quantity: 5,
-      gross_price: "₪95.48",
-      net_price: "₪94.11",
-    },
-    {
-      date: "26/03/2023",
-      quantity: 4,
-      gross_price: "₪93.74",
-      net_price: "₪3333",
-    },
-    {
-      date: "26/03/2023",
-      quantity: 4,
-      gross_price: "₪93.74",
-      net_price: "₪3333",
-    },
-    {
-      date: "26/03/2023",
-      quantity: 4,
-      gross_price: "₪93.74",
-      net_price: "₪3333",
-    },
-    {
-      date: "26/03/2023",
-      quantity: 4,
-      gross_price: "₪93.74",
-      net_price: "₪3333",
-    },
-  ];
-  const VehiclesPopData = [
-    {
-      manufacturer: "פרואייס סיטי ורסו",
-      years: "2011-2016",
-      comments: "ברכב עם צלחת אחורי",
-    },
-    {
-      manufacturer: "טויוטה קורולה",
-      years: "2014-2018",
-      comments: "הרכב מגיע עם מערכת ABS מתקדמת",
-    },
-    {
-      manufacturer: "יונדאי טוסון",
-      years: "2016-2020",
-      comments: "רכב עם חיישני חנייה",
-    },
-    {
-      manufacturer: "מאזדה 3",
-      years: "2010-2015",
-      comments: "כולל מצלמת רוורס",
-    },
-    {
-      manufacturer: "פולקסווגן גולף",
-      years: "2012-2017",
-      comments: "רכב ספורט עם גג נפתח",
-    },
-    {
-      manufacturer: "סובארו אימפרזה",
-      years: "2013-2019",
-      comments: "הרכב מצויד בבקרת יציבות",
-    },
-    {
-      manufacturer: "ניסאן קשקאי",
-      years: "2015-2021",
-      comments: "רכב עם מערכת בקרת אקלים",
-    },
-    {
-      manufacturer: "פורד פוקוס",
-      years: "2011-2016",
-      comments: "כולל מערכת התראה על התקרבות יתר",
-    },
-    {
-      manufacturer: "מרצדס C קלאס",
-      years: "2017-2022",
-      comments: "מערכת מולטימדיה עם מסך מגע",
-    },
-  ];
 
-  const AlternateSKUPopData = [
-    {
-      SKU: "DAC 45840039ABS",
-    },
-    {
-      SKU: "TRK 58392010XYZ",
-    },
-    {
-      SKU: "MOT 34985029JLP",
-    },
-    {
-      SKU: "BRK 12948763GHT",
-    },
-    {
-      SKU: "WHL 78392047XYZ",
-    },
-    {
-      SKU: "ENG 45920384PLT",
-    },
-    {
-      SKU: "FTR 39485763BRK",
-    },
-    {
-      SKU: "CLT 83920475DFG",
-    },
-    {
-      SKU: "PIP 23984765PLQ",
-    },
-    {
-      SKU: "BTT 98237495XYZ",
-    },
-  ];
-  console.log("====================================");
-  console.log(type);
-  console.log("====================================");
   return (
     <View>
       <TouchableOpacity style={styles.container} onPress={togglePopUp}>
@@ -172,24 +73,24 @@ const InfoButton = ({ placeholder, type, car }) => {
           <RecentShoppingPop
             data={RecentShoppingPopData}
             onClose={togglePopUp}
-            title={car ? car.name : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.carName : ""} // Safe check for car.carName
+            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
+            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
           />
         )}
         {type == 2 && (
           <VehiclesPop
             data={VehiclesPopData}
             onClose={togglePopUp}
-            title={car ? car.name : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.carName : ""} // Safe check for car.carName
+            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
+            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
           />
         )}
         {type == 3 && (
           <AlternateSKUPop
             data={AlternateSKUPopData}
             onClose={togglePopUp}
-            title={car ? car.name : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.carName : ""} // Safe check for car.carName
+            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
+            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
           />
         )}
       </Modal>

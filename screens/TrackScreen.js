@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -7,112 +7,72 @@ import {
   Modal,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
 import CalendarPop from "../components/calenderPopup";
 import InvPopup from "../components/invPopup";
+import ordersModel from "../model/ordersModel";
 const { width, height } = Dimensions.get("window");
 
-const TrackScreen = ({ navigation }) => {
+const TrackScreen = ({ navigation, route }) => {
   const today = new Date();
   const thisYear = today.getFullYear();
+  const { userData } = route.params;
   const defaultStartDate = new Date(thisYear, 0, 1).toLocaleDateString("en-GB");
   const defaultEndDate = today.toLocaleDateString("en-GB");
-
   const [isEmpty, setIsEmpty] = useState(false);
   const [openPopUp, setOpenPopUp] = useState(null);
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
-  const [isProcessingSelected, setIsProcessingSelected] = useState(false);
-  const [isDeliveredSelected, setIsDeliveredSelected] = useState(false);
+  const [selectedtatus, setSelectedtatus] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [orderList, setOrderList] = useState([]);
+  const [invData, setInvData] = useState([]);
+  const [popUploading, setPopUploading] = useState(false);
+  const [pageloading, setPageloading] = useState(false);
 
-  const inv = [
-    {
-      id: 11725330,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725331,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725332,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725333,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725334,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725335,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725336,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725337,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725338,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725339,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725340,
-      shipping_method: "נזמי",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-    {
-      id: 11725341,
-      shipping_method: "שחר",
-      status: "חבילה נשלחה",
-      date: "18/08/2024",
-      time: "12:30",
-    },
-  ];
+  useEffect(() => {
+    fatchOrderList = async () => {
+      setPageloading(true);
+      try {
+        const response = await ordersModel.getOrdersList({
+          CARDCODE: userData.U_CARD_CODE,
+          STARTDATE: startDate,
+          ENDDATE: endDate,
+          DELIVERYSTTS: selectedtatus,
+        });
+        setOrderList(response);
+      } catch (err) {
+        console.log("====================================");
+        console.log("error = " + err);
+        console.log("====================================");
+      } finally {
+        setPageloading(false);
+      }
+    };
+    fatchOrderList();
+  }, [startDate, endDate, selectedtatus]);
+
+  useEffect(() => {
+    const fatchItemsList = async () => {
+      if (!selectedItem) return; // If nothing is selected, skip
+      try {
+        setPopUploading(true); // <-- Start loading
+        const response = await ordersModel.getItemsByDocNum({
+          DOCNUM: selectedItem,
+        });
+        setInvData(response);
+      } catch (err) {
+        console.log("====================================");
+        console.log("error = " + err);
+        console.log("====================================");
+      } finally {
+        setPopUploading(false); // <-- End loading
+      }
+    };
+    fatchItemsList();
+  }, [selectedItem]);
 
   const handleItemPress = (item) => {
     setSelectedItem(item); // Set the selected item
@@ -120,6 +80,7 @@ const TrackScreen = ({ navigation }) => {
 
   const closeInvPopup = () => {
     setSelectedItem(null); // Close the popup by clearing selectedItem
+    togglePopUp();
   };
 
   const togglePopUp = (type = null) => {
@@ -134,10 +95,10 @@ const TrackScreen = ({ navigation }) => {
     setOpenPopUp(null); // Close popup
   };
 
-  const renderCategory = ({ item, index }) => (
+  const renderItem = ({ item, index }) => (
     <TouchableOpacity
       style={{ flexDirection: "row", height: height * 0.11 }}
-      onPress={() => handleItemPress(item.id)}
+      onPress={() => handleItemPress(item.DOCNUM)}
     >
       <View style={{ flexDirection: "row", flex: 7.5 }}>
         <View style={{ padding: 10 }}>
@@ -147,10 +108,14 @@ const TrackScreen = ({ navigation }) => {
         </View>
         <View style={{ padding: 10 }}>
           <Text style={[styles.itemHader, { textAlign: "left" }]}>
-            {item.id}
+            {item.DOCNUM}
           </Text>
-          <Text style={{ textAlign: "left" }}>{item.shipping_method}</Text>
-          <Text style={{ textAlign: "left" }}>{item.status}</Text>
+          <Text style={[styles.itemInfo, { textAlign: "left" }]}>
+            {item.U_REC_SHIPTYPE}
+          </Text>
+          <Text style={[styles.itemInfo, { textAlign: "left" }]}>
+            {item.DELIVERY_STATUS}
+          </Text>
         </View>
       </View>
       <View style={styles.verticalSeparator} />
@@ -161,8 +126,8 @@ const TrackScreen = ({ navigation }) => {
           justifyContent: "center",
         }}
       >
-        <Text style={styles.itemHader}>{item.date}</Text>
-        <Text style={styles.itemHader}>{item.time}</Text>
+        <Text style={styles.date}>{item.DOCDATE}</Text>
+        <Text style={styles.date}>{item.DOCHOUR}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -250,7 +215,6 @@ const TrackScreen = ({ navigation }) => {
               <Text style={{ color: "#6F6F6F", fontSize: 16 }}>יום שלישי</Text>
             </TouchableOpacity>
           </View>
-
           <View
             style={{
               flex: 0.6,
@@ -260,50 +224,74 @@ const TrackScreen = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.filterButton,
-                isProcessingSelected && styles.selectedButton,
+                selectedtatus == "" && styles.selectedButton,
               ]}
-              onPress={() => setIsProcessingSelected(!isProcessingSelected)}
+              onPress={() => setSelectedtatus("")}
             >
               <Text
                 style={[
                   styles.buttonText,
-                  isProcessingSelected && styles.selectedButtonText,
+                  selectedtatus == "" && styles.selectedButtonText,
                 ]}
               >
-                חבילה בטיפול
+                הכל
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                selectedtatus == "2" && styles.selectedButton,
+              ]}
+              onPress={() => setSelectedtatus("2")}
+            >
+              <Text
+                style={[
+                  styles.buttonText,
+                  selectedtatus == "2" && styles.selectedButtonText,
+                ]}
+              >
+                חבילה נמסרה
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.filterButton,
-                isDeliveredSelected && styles.selectedButton,
+                selectedtatus == "1" && styles.selectedButton,
               ]}
-              onPress={() => setIsDeliveredSelected(!isDeliveredSelected)}
+              onPress={() => setSelectedtatus("1")}
             >
               <Text
                 style={[
                   styles.buttonText,
-                  isDeliveredSelected && styles.selectedButtonText,
+                  selectedtatus == "1" && styles.selectedButtonText,
                 ]}
               >
-                חבילה נמסרה
+                חבילה בטיפול
               </Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.ItemsSeparator} />
-
           <View style={{ flex: 7.4 }}>
-            <FlatList
-              data={inv}
-              renderItem={renderCategory}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={renderSeparatorItem}
-              showsVerticalScrollIndicator={false}
-            />
+            {pageloading ? (
+              /* Loader appears here if "loading" is true */
+              <View style={styles.loaderContainer}>
+                <ActivityIndicator
+                  size="large"
+                  color="#ED2027"
+                  style={styles.bigSpinner}
+                />
+              </View>
+            ) : (
+              <FlatList
+                data={orderList}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => index}
+                ItemSeparatorComponent={renderSeparatorItem}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
           </View>
-
           <Modal
             visible={!!openPopUp}
             transparent={true}
@@ -325,38 +313,8 @@ const TrackScreen = ({ navigation }) => {
               <InvPopup
                 title={selectedItem}
                 onClose={closeInvPopup}
-                data={[
-                  {
-                    id: "DAC 42800041 ABS",
-                    name: "פלאג אסטרה 1.4 מ-2011 + שברולט טרקס 1.4 טורבו + קרוז 1.4 טוברו=NGK91039N",
-                    quantity: 4,
-                    price: 93.0,
-                  },
-                  {
-                    id: "DAC 42800042 ABS",
-                    name: "פלאג אסטרה 1.4 מ-2011 + שברולט טרקס 1.4 טורבו + קרוז 1.4 טוברו=NGK91039N",
-                    quantity: 4,
-                    price: 93.0,
-                  },
-                  {
-                    id: "DAC 42800043 ABS",
-                    name: "פלאג אסטרה 1.4 מ-2011 + שברולט טרקס 1.4 טורבו + קרוז 1.4 טוברו=NGK91039N",
-                    quantity: 4,
-                    price: 93.0,
-                  },
-                  {
-                    id: "DAC 42800044 ABS",
-                    name: "פלאג אסטרה 1.4 מ-2011 + שברולט טרקס 1.4 טורבו + קרוז 1.4 טוברו=NGK91039N",
-                    quantity: 4,
-                    price: 93.0,
-                  },
-                  {
-                    id: "DAC 42800045 ABS",
-                    name: "פלאג אסטרה 1.4 מ-2011 + שברולט טרקס 1.4 טורבו + קרוז 1.4 טוברו=NGK91039N",
-                    quantity: 4,
-                    price: 93.0,
-                  },
-                ]}
+                data={invData}
+                loading={popUploading}
               />
             )}
           </Modal>
@@ -445,9 +403,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#EBEDF5",
   },
   itemHader: {
-    fontSize: 18,
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#ED2027",
+  },
+  date: {
+    fontSize: 15,
     fontWeight: "bold",
     color: "#1A2540",
   },
-  itemInfo: { fontSize: 18, color: "#1A2540" },
+  itemInfo: { fontSize: 14, color: "#1A2540" },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bigSpinner: {
+    transform: [{ scaleX: 3 }, { scaleY: 3 }], // Scales the spinner up
+  },
 });

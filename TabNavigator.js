@@ -6,36 +6,15 @@ import CartScreen from "./screens/CartScreen"; // Adjust the path as necessary
 import ArmorScreen from "./screens/ArmorScreen"; // Adjust the path as necessary
 import TrackScreen from "./screens/TrackScreen"; // Adjust the path as necessary
 import MenuScreen from "./screens/MenuScreen"; // Adjust the path as necessary
+import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
 
 const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get("window");
 
 const TabNavigator = ({ route }) => {
-  const { userName } = route.params;
+  const userData = route.params.userData; // <-- Expecting the param here
 
   // Requiring icons once to avoid repeated imports inside the screenOptions function
-  const icons = {
-    search: {
-      focused: require("./assets/icons/searchIcons/Search_focus.png"),
-      default: require("./assets/icons/searchIcons/Search.png"),
-    },
-    cart: {
-      focused: require("./assets/icons/cartIcons/Cart_focus.png"),
-      default: require("./assets/icons/cartIcons/Cart.png"),
-    },
-    armor: {
-      focused: require("./assets/icons/armorIcons/Armor_focus.png"),
-      default: require("./assets/icons/armorIcons/Armor.png"),
-    },
-    track: {
-      focused: require("./assets/icons/trackIcons/Track_focus.png"),
-      default: require("./assets/icons/trackIcons/Track.png"),
-    },
-    menu: {
-      focused: require("./assets/icons/menuIcons/Menu_focus.png"),
-      default: require("./assets/icons/menuIcons/Menu.png"),
-    },
-  };
 
   return (
     <Tab.Navigator
@@ -48,37 +27,69 @@ const TabNavigator = ({ route }) => {
           borderTopWidth: 1,
         },
         tabBarIcon: ({ focused }) => {
-          let iconName;
+          let iconElement;
           switch (route.name) {
             case "Search":
-              iconName = focused ? icons.search.focused : icons.search.default;
+              iconElement = (
+                <Icon
+                  name="search1"
+                  size={22}
+                  color={focused ? "#ED2027" : "#959595"}
+                  style={styles.icon}
+                />
+              );
               break;
             case "Cart":
-              iconName = focused ? icons.cart.focused : icons.cart.default;
+              iconElement = (
+                <Icon
+                  name="shoppingcart"
+                  size={22}
+                  color={focused ? "#ED2027" : "#959595"}
+                  style={styles.icon}
+                />
+              );
               break;
             case "Armor":
-              iconName = focused ? icons.armor.focused : icons.armor.default;
+              iconElement = (
+                <Icon
+                  name="book"
+                  size={22}
+                  color={focused ? "#ED2027" : "#959595"}
+                  style={styles.icon}
+                />
+              );
               break;
             case "Track":
-              iconName = focused ? icons.track.focused : icons.track.default;
+              iconElement = (
+                <Icon
+                  name="profile"
+                  size={22}
+                  color={focused ? "#ED2027" : "#959595"}
+                  style={styles.icon}
+                />
+              );
               break;
             case "Menu":
-              iconName = focused ? icons.menu.focused : icons.menu.default;
+              iconElement = (
+                <Icon
+                  name="bars"
+                  size={22}
+                  color={focused ? "#ED2027" : "#959595"}
+                  style={styles.icon}
+                />
+              );
               break;
             default:
+              iconElement = null;
               break;
           }
 
-          return (
-            <View style={styles.iconContainer}>
-              <Image source={iconName} style={styles.icon} />
-            </View>
-          );
+          return <View style={styles.iconContainer}>{iconElement}</View>;
         },
         tabBarActiveTintColor: "#ED2027", // Color for active tab
         tabBarInactiveTintColor: "#959595", // Color for inactive tab
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: "bold",
           bottom: 10, // Adjusts label positioning
         },
@@ -88,7 +99,7 @@ const TabNavigator = ({ route }) => {
         name="Search"
         component={serchNav}
         options={{ tabBarLabel: "חיפוש" }}
-        initialParams={{ userName: userName }} // Pass userName as initial params
+        initialParams={{ userData: userData }} // Pass userData as initial params
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault(); // Prevent the default action of resetting the stack
@@ -100,21 +111,25 @@ const TabNavigator = ({ route }) => {
         name="Cart"
         component={CartScreen}
         options={{ tabBarLabel: "עגלה" }}
+        initialParams={{ userData: userData }}
       />
       <Tab.Screen
         name="Armor"
         component={ArmorScreen}
         options={{ tabBarLabel: "שריונים" }}
+        initialParams={{ userData: userData }}
       />
       <Tab.Screen
         name="Track"
         component={TrackScreen}
         options={{ tabBarLabel: "מעקב הזמנות" }}
+        initialParams={{ userData: userData }}
       />
       <Tab.Screen
         name="Menu"
         component={MenuScreen}
         options={{ tabBarLabel: "תפריט" }}
+        initialParams={{ userData: userData }}
       />
     </Tab.Navigator>
   );
@@ -128,7 +143,6 @@ const styles = StyleSheet.create({
   icon: {
     width: 24, // You can adjust size based on your icon size
     height: 24,
-    resizeMode: "contain",
   },
 });
 
