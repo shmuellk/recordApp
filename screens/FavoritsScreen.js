@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,88 +9,232 @@ import {
   FlatList,
   I18nManager,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+import favoritsModel from "../model/favoritsModel";
+import SuccessPopup from "../components/SuccessPopup";
 import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+
 const { width, height } = Dimensions.get("window");
 
-const FavoritsScreen = ({ navigation }) => {
+const FavoritsScreen = ({ navigation, route }) => {
+  const [quantities, setQuantities] = useState([]);
   const [isEmpty, SetIsEmpty] = useState(false);
-  const [quantities, setQuantities] = useState({});
-  const Items = [
-    {
-      id: "1",
-      name: "חיישן קרנק",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 16.99",
-      massege: "משמש כאחורי",
-      SKU: "Dx 36393464",
-      brand: "optimal",
-      amount: 2,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2R1lcqAv6bIbhM8Rz7EFaRvc7LGn7324TPQ&s",
-    },
-    {
-      amount: 1500,
-      id: "2",
-      name: "חיישן קמשפט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      massege: "משמש כקידמי",
-      SKU: "Da 3367895",
-      brand: "ironman",
-      price: "₪ 15.99",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHuEm-A8VhRFQLApRaDRm9UqDddo_kB-Ykeg&s",
-    },
-    {
-      amount: 300,
-      id: "3",
-      name: "מיסב ציריה",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      price: "₪ 2500.99",
-      year: "2006-2009",
-      SKU: "cc 87956774",
-      brand: "skf",
-      massege: "4 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL45GnDnLrfO_Ahwv_-grNGBLB0wnY6LVjSw&s",
-    },
-    {
-      amount: 0,
-      id: "4",
-      name: "תרמוסטט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 88.99",
-      SKU: "fd 000688994",
-      brand: "MAD",
-      massege: "2 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpwcFdsQdS1VxdZ8YMKYhU1TQtzSqKexlDxg&s",
-    },
-  ];
+  const { userData } = route.params;
+  const [favoritsItems, setFavoritsItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [removingItem, setRemovingItem] = useState({});
+  const [addItemToCart, setAddItemToCart] = useState({});
+  const [popupsQueue, setPopupsQueue] = useState([]);
+  const [currentPopup, setCurrentPopup] = useState(null);
+  const [timestamp] = useState(Date.now());
+
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // קח את הראשון בתור והצג אותו
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
+
+  // פונקציה שמציגה פופאפ חדש ומוסיפה אותו לתור
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
+  };
+
+  // כשהפופאפ הנוכחי מסיים, מסירים אותו מהתור ומאפסים, כדי לאפשר לפופאפ הבא לעלות
+  const handlePopupDismiss = () => {
+    setPopupsQueue((prevQueue) => prevQueue.slice(1));
+    setCurrentPopup(null);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          // 1) Fetch data from your model:
+          const data = await favoritsModel.getFavoritsList({
+            userName: userData.U_USER_NAME,
+            cardCode: userData.U_CARD_CODE,
+          });
+
+          if (!data || data.length === 0) {
+            setFavoritsItems([]);
+            setQuantities([]);
+            SetIsEmpty(true);
+            return; // Skip further processing
+          }
+
+          // 2) Transform each item to match the shape you want:
+          const transformedData = data.map((item) => ({
+            id: item.ID,
+            name: item.CHILD_GROUP + " " + (item.DESCRIPTION_NOTE || ""), // guard against empty
+            net_price: item.NET_PRICE,
+            gross_price: item.GROSS_PRICE,
+            image: item.IMAGE,
+            SKU: item.ITEMCODE,
+            quantity: item.QUANTITY,
+            brand: item.BRAND,
+            amount: 1,
+          }));
+
+          console.log("====================================");
+          console.log("transformedData :" + JSON.stringify(transformedData));
+          console.log("====================================");
+          setFavoritsItems(transformedData);
+          const updatedQuantities = transformedData.map((item) => ({
+            id: item.id,
+            amount: item.amount,
+          }));
+          setQuantities(updatedQuantities);
+          SetIsEmpty(false);
+        } catch (error) {
+          console.error("Failed to load cart items:", error);
+          SetIsEmpty(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, [userData])
+  );
 
   const increment = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) + 1,
-    }));
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return { ...q, amount: q.amount + 1 };
+        }
+        return q;
+      })
+    );
   };
 
   const decrement = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: prevQuantities[id] > 1 ? prevQuantities[id] - 1 : 1,
-    }));
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return {
+            ...q,
+            amount: q.amount - 1 > 0 ? q.amount - 1 : 1,
+          };
+        }
+        return q;
+      })
+    );
+  };
+
+  const handleRemovFromFavorits = async (itemId, itemSKU) => {
+    setRemovingItem((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await favoritsModel.addItemToFavorits({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        status: "DEL",
+      });
+
+      showPopup("הפריט הוסר בהצלחה!");
+
+      setFavoritsItems((prevfavoritsItems) => {
+        const newFavoritsItems = prevfavoritsItems.filter(
+          (favoritsItems) => favoritsItems.id !== itemId
+        );
+        // If there are no items left, mark cart as empty
+        if (newFavoritsItems.length === 0) {
+          SetIsEmpty(true);
+        }
+        return newFavoritsItems;
+      });
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.filter((q) => q.id !== itemId)
+      );
+    } catch (e) {
+      console.log("Failed to remove item:", e);
+    } finally {
+      setRemovingItem((prev) => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handleAddItemToCart = async (itemId, itemSKU, newQuantity) => {
+    setAddItemToCart((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToBy: newQuantity,
+      });
+
+      showPopup("הפריט נוסף לעגלה!");
+
+      setFavoritsItems((prevfavoritsItems) =>
+        prevfavoritsItems.map((item) =>
+          item.id === itemId ? { ...item, amount: 1 } : item
+        )
+      );
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => (q.id === itemId ? { ...q, amount: 1 } : q))
+      );
+    } catch (e) {
+      console.log("Failed to Update item:", e);
+    } finally {
+      setAddItemToCart((prev) => ({ ...prev, [itemId]: false }));
+    }
   };
 
   const renderItem = ({ item }) => {
-    const quantity = quantities[item.id] || 1;
+    const numericNetPrice =
+      parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
+    const numericGrossPrice =
+      parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
+
+    let finalNet = numericNetPrice;
+    if (finalNet === 0) {
+      finalNet = numericGrossPrice / 2;
+    }
+
+    const handleQuantityChange = (text, id) => {
+      // השארת ספרות בלבד
+      const numericValue = text.replace(/[^0-9]/g, "");
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => {
+          if (q.id === id) {
+            // בדיקה אם הערך ריק או שווה ל-0
+            const newQuantity =
+              !numericValue || parseInt(numericValue, 10) === 0
+                ? 1
+                : parseInt(numericValue, 10);
+
+            return {
+              ...q,
+              amount: newQuantity,
+            };
+          }
+          return q;
+        })
+      );
+    };
+
+    const foundQuantity = quantities.find((q) => q.id === item.id);
+    const amount = foundQuantity ? foundQuantity.amount : item.amount;
+
+    const handleRemoveItemClick = () => {
+      handleRemovFromFavorits(item.id, item.SKU);
+    };
+
+    const handleUpdateItemClick = () => {
+      handleAddItemToCart(item.id, item.SKU, amount);
+    };
 
     return (
       <View style={Cardstyles.card}>
@@ -99,17 +243,26 @@ const FavoritsScreen = ({ navigation }) => {
             <Text style={Cardstyles.haderText}>{item.name}</Text>
             <View>
               <View style={{ flexDirection: "row" }}>
+                <Text style={Cardstyles.infoTitle}>מותג : </Text>
+                <Text style={Cardstyles.infoText}>{item.brand}</Text>
+              </View>
+              <View style={{ flexDirection: "row" }}>
                 <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
                 <Text style={Cardstyles.infoText}>{item.SKU}</Text>
               </View>
               <View style={{ flexDirection: "row" }}>
                 <Text style={Cardstyles.infoTitle}>מחיר : </Text>
-                <Text style={Cardstyles.infoText}>{item.price}</Text>
+                <Text style={Cardstyles.infoText}>₪ {finalNet.toFixed(2)}</Text>
               </View>
             </View>
           </View>
           <View style={Cardstyles.imageData}>
-            <Image style={Cardstyles.image} source={{ uri: item.image }} />
+            <Image
+              style={Cardstyles.image}
+              source={{
+                uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+              }}
+            />
           </View>
         </View>
 
@@ -124,19 +277,10 @@ const FavoritsScreen = ({ navigation }) => {
 
             <TextInput
               style={Cardstyles.quantityInput}
-              value={quantity.toString()}
+              value={amount.toString()}
               onChangeText={(text) => handleQuantityChange(text, item.id)}
               keyboardType="numeric"
               selectTextOnFocus={true}
-              onBlur={() => {
-                if (!quantities[item.id]) {
-                  // Default to 1 if input is empty
-                  setQuantities((prevQuantities) => ({
-                    ...prevQuantities,
-                    [item.id]: 1,
-                  }));
-                }
-              }}
             />
 
             <TouchableOpacity
@@ -146,7 +290,7 @@ const FavoritsScreen = ({ navigation }) => {
               <Image source={require("../assets/icons/itemCard/Plus.png")} />
             </TouchableOpacity>
           </View>
-          {item.amount > 0 && (
+          {item.quantity > 0 && (
             <View
               style={{
                 paddingLeft: 10,
@@ -162,81 +306,118 @@ const FavoritsScreen = ({ navigation }) => {
                   justifyContent: "center",
                   alignItems: "center",
                 }}
+                onPress={handleUpdateItemClick}
+                disabled={!!addItemToCart[item.id]} // הטעינה רק לפריט הזה
               >
-                <Text
-                  style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
-                >
-                  הוסף לעגלה
-                </Text>
+                {addItemToCart[item.id] ? (
+                  <ActivityIndicator color="red" />
+                ) : (
+                  <Text
+                    style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+                  >
+                    הוסף לעגלה
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
           <View style={Cardstyles.removeButtonContainer}>
-            <TouchableOpacity style={Cardstyles.removeButton}>
-              <Text style={Cardstyles.removeButtonText}>הסר</Text>
+            <TouchableOpacity
+              style={Cardstyles.removeButton}
+              onPress={handleRemoveItemClick}
+              disabled={!!removingItem[item.id]}
+            >
+              {removingItem[item.id] ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={Cardstyles.removeButtonText}>הסר</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={Cardstyles.priceView}></View>
+        {/* <View style={Cardstyles.priceView}> </View> */}
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.hader}>
-        <TouchableOpacity
-          style={styles.rightButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Image source={require("../assets/Back.png")} />
-        </TouchableOpacity>
-        <View style={styles.titleWrapper}>
-          <Text style={styles.headerText}>מועדפים</Text>
+    <>
+      <SuccessPopup
+        text={currentPopup?.text || ""}
+        visible={!!currentPopup} // אם currentPopup קיים, נציג
+        onDismiss={handlePopupDismiss}
+        color={currentPopup?.color || "#28A745"}
+      />
+
+      <View style={styles.container}>
+        <View style={styles.hader}>
+          <TouchableOpacity
+            style={styles.rightButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Image source={require("../assets/Back.png")} />
+          </TouchableOpacity>
+          <View style={styles.titleWrapper}>
+            <Text style={styles.headerText}>מועדפים</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.ItemsSeparator} />
-      <>
-        {isEmpty ? (
-          <View style={styles.Data}>
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                bottom: 50,
-                flex: 9,
-              }}
-            >
-              <View style={styles.emptyCartView}>
-                <Icon
-                  name="staro"
-                  size={70}
-                  color="#1A2540"
-                  style={styles.serchItemIcon}
-                />
-              </View>
-              <View style={styles.massegeView}>
-                <Text style={styles.mainHader}>אין מועדפים</Text>
-                <Text style={styles.SubHader}>המועדפים שלך יופיעו כאן</Text>
+        <View style={styles.ItemsSeparator} />
+        <>
+          {isEmpty ? (
+            <View style={styles.Data}>
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bottom: 50,
+                  flex: 9,
+                }}
+              >
+                <View style={styles.emptyCartView}>
+                  <Icon
+                    name="staro"
+                    size={70}
+                    color="#1A2540"
+                    style={styles.serchItemIcon}
+                  />
+                </View>
+                <View style={styles.massegeView}>
+                  <Text style={styles.mainHader}>אין מועדפים</Text>
+                  <Text style={styles.SubHader}>המועדפים שלך יופיעו כאן</Text>
+                </View>
               </View>
             </View>
-          </View>
-        ) : (
-          <View style={styles.Data}>
-            <FlatList
-              data={Items}
-              renderItem={({ item }) => renderItem({ item })}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => (
-                <View style={styles.ItemsSeparator} />
+          ) : (
+            <View style={styles.Data}>
+              {loading ? (
+                <View
+                  style={{
+                    height: height * 0.78,
+                    alignContent: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <View style={{ transform: [{ scale: 2 }] }}>
+                    <ActivityIndicator size="large" color="#ED2027" />
+                  </View>
+                </View>
+              ) : (
+                <FlatList
+                  data={favoritsItems}
+                  renderItem={({ item }) => renderItem({ item })}
+                  keyExtractor={(item) => item.id}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.ItemsSeparator} />
+                  )}
+                  showsVerticalScrollIndicator={false}
+                />
               )}
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
-        )}
-      </>
-    </View>
+            </View>
+          )}
+        </>
+      </View>
+    </>
   );
 };
 
@@ -325,7 +506,6 @@ const Cardstyles = StyleSheet.create({
     backgroundColor: "white",
     width: width,
     minHeight: 160,
-    maxHeight: 200,
     paddingHorizontal: 10,
     paddingVertical: 10,
   },

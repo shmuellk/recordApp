@@ -7,6 +7,7 @@ import LogInScreen from "./screens/LogInScreen";
 import TabNavigator from "./TabNavigator";
 import MenuScreen from "./screens/MenuScreen";
 import FavoritsScreen from "./screens/FavoritsScreen";
+import ArmorScreen from "./screens/ArmorScreen"; // Adjust the path as necessary
 import ContactScreen from "./screens/ContactScreen";
 import { I18nManager } from "react-native"; // Import I18nManager
 
@@ -50,6 +51,7 @@ export default function App() {
         <Stack.Screen name="LogInScreen" component={LogInScreen} />
         <Stack.Screen name="App" component={TabNavigator} />
         <Stack.Screen name="FavoritsScreen" component={FavoritsScreen} />
+        <Stack.Screen name="ArmorScreen" component={ArmorScreen} />
         <Stack.Screen name="ContactScreen" component={ContactScreen} />
         <Stack.Screen name="MenuScreen" component={MenuScreen} />
       </Stack.Navigator>

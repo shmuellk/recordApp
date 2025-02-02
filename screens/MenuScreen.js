@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
 const { width, height } = Dimensions.get("window");
-const MenuScreen = ({ navigation }) => {
+const MenuScreen = ({ navigation, route }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const { userData } = route.params;
 
   const handleConfirm = () => {
     setModalVisible(false); // Close the modal
@@ -47,7 +48,9 @@ const MenuScreen = ({ navigation }) => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate("FavoritsScreen")}
+            onPress={() =>
+              navigation.navigate("FavoritsScreen", { userData: userData })
+            }
           >
             <Text style={styles.actionText}>מועדפים</Text>
             <Icon name="staro" size={22} color="red" style={styles.icon} />
@@ -55,7 +58,19 @@ const MenuScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate("ContactScreen")}
+            onPress={() =>
+              navigation.navigate("ArmorScreen", { userData: userData })
+            }
+          >
+            <Text style={styles.actionText}>שריונים</Text>
+            <Icon name="book" size={22} color="red" style={styles.icon} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate("ContactScreen", { userData: userData })
+            }
           >
             <Text style={styles.actionText}>צור קשר</Text>
             <Icon name="phone" size={22} color="red" style={styles.icon} />

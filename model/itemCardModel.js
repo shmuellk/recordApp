@@ -28,32 +28,30 @@ const getItemBrand = async (data) => {
 
 const getItemBrandByCar = async (data) => {
   try {
+    const PARENT_GROUP = data.PARENT_GROUP ? data.PARENT_GROUP : "";
+    const ITEM_GROUP = data.ITEM_GROUP ? data.ITEM_GROUP : "";
     const CHILD_GROUP = data.CHILD_GROUP ? data.CHILD_GROUP : "";
-    const DESCRIPTION_NOTE = data.DESCRIPTION_NOTE ? data.DESCRIPTION_NOTE : "";
     const MANUFACTURER = data.MANUFACTURER ? data.MANUFACTURER : "";
     const MODEL = data.MODEL ? data.MODEL : "";
-    const MANUFACTURE_YEAR = data.MANUFACTURE_YEAR ? data.MANUFACTURE_YEAR : "";
+    const CAPACITY = data.CAPACITY ? data.CAPACITY : "";
+    const FROM_YEAR = data.FROM_YEAR ? data.FROM_YEAR : "";
+    const UNTIL_YEAR = data.UNTIL_YEAR ? data.UNTIL_YEAR : "";
     const YEAR_LIMIT = data.YEAR_LIMIT ? data.YEAR_LIMIT : "";
-    const GEAR = data.GEAR ? data.GEAR : "";
-    const BODY = data.BODY ? data.BODY : "";
-    const DOORS = data.DOORS ? data.DOORS : "";
-    const ENGINE_MODEL = data.ENGINE_MODEL ? data.ENGINE_MODEL : "";
-    const PROPULSION = data.PROPULSION ? data.PROPULSION : "";
-    const NOTE = data.NOTE ? data.NOTE : "";
+    const CAR_NOTE = data.CAR_NOTE ? data.CAR_NOTE : "";
+    const DESCRIPTION_NOTE = data.DESCRIPTION_NOTE ? data.DESCRIPTION_NOTE : "";
     let response = await axios.get(`${IP}/itemCard/getItemBrandByCar/`, {
       params: {
+        PARENT_GROUP,
+        ITEM_GROUP,
         CHILD_GROUP,
-        DESCRIPTION_NOTE,
         MANUFACTURER,
         MODEL,
-        MANUFACTURE_YEAR,
+        CAPACITY,
+        FROM_YEAR,
+        UNTIL_YEAR,
         YEAR_LIMIT,
-        GEAR,
-        BODY,
-        DOORS,
-        ENGINE_MODEL,
-        PROPULSION,
-        NOTE,
+        CAR_NOTE,
+        DESCRIPTION_NOTE,
       },
     });
 

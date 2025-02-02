@@ -171,6 +171,9 @@ const ItemScreen = ({ navigation, route }) => {
             YEAR_LIMIT: carData.YEAR_LIMIT,
             NOTE: carData.NOTE,
           });
+          console.log("====================================");
+          console.log("response = " + JSON.stringify(response));
+          console.log("====================================");
           setFilteredItems(response);
         } catch (err) {
           console.log("====================================");

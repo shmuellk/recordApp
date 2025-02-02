@@ -3,10 +3,12 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Image, View, StyleSheet, Dimensions } from "react-native";
 import serchNav from "./serchNav"; // Adjust the path as necessary
 import CartScreen from "./screens/CartScreen"; // Adjust the path as necessary
-import ArmorScreen from "./screens/ArmorScreen"; // Adjust the path as necessary
 import TrackScreen from "./screens/TrackScreen"; // Adjust the path as necessary
 import MenuScreen from "./screens/MenuScreen"; // Adjust the path as necessary
+import SalesScreen from "./screens/SalesScreen"; // Adjust the path as necessary
+
 import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+import Icon2 from "react-native-vector-icons/MaterialCommunityIcons"; // Using Ionicons for the left arrow
 
 const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get("window");
@@ -49,10 +51,10 @@ const TabNavigator = ({ route }) => {
                 />
               );
               break;
-            case "Armor":
+            case "Sales":
               iconElement = (
-                <Icon
-                  name="book"
+                <Icon2
+                  name="brightness-percent"
                   size={22}
                   color={focused ? "#ED2027" : "#959595"}
                   style={styles.icon}
@@ -114,9 +116,9 @@ const TabNavigator = ({ route }) => {
         initialParams={{ userData: userData }}
       />
       <Tab.Screen
-        name="Armor"
-        component={ArmorScreen}
-        options={{ tabBarLabel: "שריונים" }}
+        name="Sales"
+        component={SalesScreen}
+        options={{ tabBarLabel: "מבצעים" }}
         initialParams={{ userData: userData }}
       />
       <Tab.Screen

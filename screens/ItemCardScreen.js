@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,12 +9,16 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  Easing,
+  Animated,
 } from "react-native";
 
 import Button from "../components/Button";
 import InfoButton from "../components/InfoButton";
-import carModel from "../model/carsModel";
 import cartModel from "../model/cartModel";
+import SuccessPopup from "../components/SuccessPopup";
+import favoritsModel from "../model/favoritsModel";
+import armorModel from "../model/armorModel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,11 +29,54 @@ const ItemCardScreen = ({ route, navigation }) => {
   const [inStock, setInStock] = useState(Brand[0].quantity > 0 ? true : false);
   const [infoByBrand, setInfoByBrand] = useState(Brand[0] || []);
   const [timestamp] = useState(Date.now());
+  const [popupsQueue, setPopupsQueue] = useState([]);
+  const [currentPopup, setCurrentPopup] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(
     Brand[0].catalog_number || ""
   );
   const [amountToBy, setAmountToBy] = useState(1);
   const [searchLoading, setSearchLoading] = useState(false); // Loader state for search button
+
+  const starAnim = useRef(new Animated.Value(0)).current;
+  const armorAnim = useRef(new Animated.Value(0)).current;
+
+  // בכל פעם שהסטייט של star משתנה (true/false), נפעיל אנימציית fade
+  useEffect(() => {
+    Animated.timing(armorAnim, {
+      toValue: armor ? 1 : 0, // 1 = אדום, 0 = אפור
+      duration: 400, // משך האנימציה במיליסקונד
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true, // שימוש ב-Native Driver לאנימציות
+    }).start();
+  }, [armor]);
+
+  useEffect(() => {
+    Animated.timing(starAnim, {
+      toValue: star ? 1 : 0, // 1 = אדום, 0 = אפור
+      duration: 400, // משך האנימציה במיליסקונד
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true, // שימוש ב-Native Driver לאנימציות
+    }).start();
+  }, [star]);
+
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // קח את הראשון בתור והצג אותו
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
+
+  // פונקציה שמציגה פופאפ חדש ומוסיפה אותו לתור
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
+  };
+
+  // כשהפופאפ הנוכחי מסיים, מסירים אותו מהתור ומאפסים, כדי לאפשר לפופאפ הבא לעלות
+  const handlePopupDismiss = () => {
+    setPopupsQueue((prevQueue) => prevQueue.slice(1));
+    setCurrentPopup(null);
+  };
 
   const numericNetPrice =
     parseFloat(String(infoByBrand.net_price).replace(/[^\d.]/g, "")) || 0;
@@ -55,6 +102,7 @@ const ItemCardScreen = ({ route, navigation }) => {
     showNet = false;
     showGross = false;
   }
+
   const addToCart = async () => {
     setSearchLoading(true);
     try {
@@ -64,13 +112,9 @@ const ItemCardScreen = ({ route, navigation }) => {
         item_code: infoByBrand.catalog_number,
         amountToBy: amountToBy,
       });
-      console.log("====================================");
-      console.log(response);
-      console.log("====================================");
+      showPopup("הפריט נוסף לעגלה!");
     } catch (e) {
-      console.log("====================================");
-      console.log(e);
-      console.log("====================================");
+      console.log("Add to cart error:", e);
     } finally {
       setSearchLoading(false);
     }
@@ -80,12 +124,46 @@ const ItemCardScreen = ({ route, navigation }) => {
     setAmountToBy(text);
   };
 
-  const handleArmorToggle = () => {
-    setArmor((prevArmor) => !prevArmor);
+  const handleArmorToggle = async () => {
+    setArmor(true); // כוכב אדום ישר
+
+    try {
+      const response = await armorModel.addItemToArmors({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: infoByBrand.catalog_number,
+        status: "ADD",
+      });
+      showPopup("הפריט נוסף למועדפים!");
+    } catch (error) {
+      console.log("Error adding item to armor:", error);
+    }
+
+    // החזרה לאפור אחרי 2 שניות
+    setTimeout(() => {
+      setArmor(false);
+    }, 3000);
   };
 
-  const handleStarToggle = () => {
-    setStar((prevStar) => !prevStar);
+  const handleStarToggle = async () => {
+    setStar(true); // כוכב אדום ישר
+
+    try {
+      const response = await favoritsModel.addItemToFavorits({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: infoByBrand.catalog_number,
+        status: "ADD",
+      });
+      showPopup("הפריט נוסף למועדפים!");
+    } catch (error) {
+      console.log("Error adding item to favorits:", error);
+    }
+
+    // החזרה לאפור אחרי 2 שניות
+    setTimeout(() => {
+      setStar(false);
+    }, 3000);
   };
 
   const increment = () => {
@@ -132,6 +210,12 @@ const ItemCardScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <SuccessPopup
+        text={currentPopup?.text || ""}
+        visible={!!currentPopup} // אם currentPopup קיים, נציג
+        onDismiss={handlePopupDismiss}
+        color={currentPopup?.color || "#28A745"}
+      />
       <View style={styles.imageScrollerView}>
         <TouchableOpacity
           style={styles.rightButton}
@@ -182,15 +266,37 @@ const ItemCardScreen = ({ route, navigation }) => {
           <View style={styles.itemDetails}>
             <View style={styles.productTitleContainer}>
               {/* Star Icon (on the far left) */}
-              <TouchableOpacity onPress={handleStarToggle}>
-                <Image
-                  style={styles.starIcon}
-                  source={
-                    star
-                      ? require("../assets/icons/itemCard/RedStar.png")
-                      : require("../assets/icons/itemCard/GreyStar.png")
-                  }
-                />
+              <TouchableOpacity
+                onPress={handleStarToggle}
+                style={{ position: "relative" }}
+              >
+                <View style={{ width: 26, height: 26 }}>
+                  {/* כוכב אדום - יופיע כשהערך 1 */}
+                  <Animated.Image
+                    style={[
+                      styles.starIcon,
+                      {
+                        position: "absolute",
+                        opacity: starAnim, // 0 -> מוסתר, 1 -> גלוי
+                      },
+                    ]}
+                    source={require("../assets/icons/itemCard/RedStar.png")}
+                  />
+                  {/* כוכב אפור - הפוך מהערך של starAnim (1-starAnim) */}
+                  <Animated.Image
+                    style={[
+                      styles.starIcon,
+                      {
+                        position: "absolute",
+                        opacity: starAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 0],
+                        }),
+                      },
+                    ]}
+                    source={require("../assets/icons/itemCard/GreyStar.png")}
+                  />
+                </View>
               </TouchableOpacity>
 
               {/* Product Title (right-aligned) */}
@@ -320,6 +426,22 @@ const ItemCardScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
+  successPopupContainer: {
+    position: "absolute",
+    top: 80,
+    width: "80%",
+    alignSelf: "center",
+    zIndex: 999999,
+    backgroundColor: "#28A745",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  successPopupText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
   imageScrollerView: {
     flex: 4,
     justifyContent: "flex-end", // Align image to the bottom

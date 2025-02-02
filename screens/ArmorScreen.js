@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -9,98 +9,226 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
-  Keyboard,
+  ActivityIndicator,
 } from "react-native";
-import Button from "../components/Button";
-
+import { useFocusEffect } from "@react-navigation/native";
+import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+import armorModle from "../model/armorModel";
+import SuccessPopup from "../components/SuccessPopup";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Using Ionicons for the left arrow
+
 const { width, height } = Dimensions.get("window");
 
-const ArmorScreen = ({ navigation }) => {
-  const [quantities, setQuantities] = useState({});
+const ArmorScreen = ({ navigation, route }) => {
+  const [quantities, setQuantities] = useState([]);
+  const [isEmpty, SetIsEmpty] = useState(false);
+  const { userData } = route.params;
+  const [armorsItems, setArmorsItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [removingItem, setRemovingItem] = useState({});
+  const [addItemToCart, setAddItemToCart] = useState({});
+  const [popupsQueue, setPopupsQueue] = useState([]);
+  const [currentPopup, setCurrentPopup] = useState(null);
+  const [timestamp] = useState(Date.now());
 
-  const Items = [
-    {
-      id: "1",
-      name: "חיישן קרנק",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 16.99",
-      massege: "משמש כאחורי",
-      SKU: "Dx 36393464",
-      brand: "optimal",
-      amount: 2,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2R1lcqAv6bIbhM8Rz7EFaRvc7LGn7324TPQ&s",
-    },
-    {
-      amount: 1500,
-      id: "2",
-      name: "חיישן קמשפט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      massege: "משמש כקידמי",
-      SKU: "Da 3367895",
-      brand: "ironman",
-      price: "₪ 15.99",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHuEm-A8VhRFQLApRaDRm9UqDddo_kB-Ykeg&s",
-    },
-    {
-      amount: 300,
-      id: "3",
-      name: "מיסב ציריה",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      price: "₪ 2500.99",
-      year: "2006-2009",
-      SKU: "cc 87956774",
-      brand: "skf",
-      massege: "4 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL45GnDnLrfO_Ahwv_-grNGBLB0wnY6LVjSw&s",
-    },
-    {
-      amount: 0,
-      id: "4",
-      name: "תרמוסטט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 88.99",
-      SKU: "fd 000688994",
-      brand: "MAD",
-      massege: "2 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpwcFdsQdS1VxdZ8YMKYhU1TQtzSqKexlDxg&s",
-    },
-  ];
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // קח את הראשון בתור והצג אותו
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
 
-  const increment = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) + 1,
-    }));
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
   };
 
+  const handlePopupDismiss = () => {
+    setPopupsQueue((prevQueue) => prevQueue.slice(1));
+    setCurrentPopup(null);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          // 1) Fetch data from your model:
+          const data = await armorModle.getArmorsList({
+            userName: userData.U_USER_NAME,
+            cardCode: userData.U_CARD_CODE,
+          });
+
+          if (!data || data.length === 0) {
+            setArmorsItems([]);
+            setQuantities([]);
+            SetIsEmpty(true);
+            return; // Skip further processing
+          }
+
+          // 2) Transform each item to match the shape you want:
+          const transformedData = data.map((item) => ({
+            id: item.ID,
+            name: item.CHILD_GROUP + " " + (item.DESCRIPTION_NOTE || ""), // guard against empty
+            net_price: item.NET_PRICE,
+            gross_price: item.GROSS_PRICE,
+            image: item.IMAGE,
+            SKU: item.ITEMCODE,
+            quantity: item.QUANTITY,
+            brand: item.BRAND,
+            amount: item.AMOUNT,
+          }));
+
+          setArmorsItems(transformedData);
+          const updatedQuantities = transformedData.map((item) => ({
+            id: item.id,
+            amount: item.amount,
+          }));
+          setQuantities(updatedQuantities);
+          SetIsEmpty(false);
+        } catch (error) {
+          console.error("Failed to load cart items:", error);
+          SetIsEmpty(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, [userData])
+  );
+
+  const increment = (id) => {
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return { ...q, amount: q.amount + 1 };
+        }
+        return q;
+      })
+    );
+  };
   const decrement = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: prevQuantities[id] > 1 ? prevQuantities[id] - 1 : 1,
-    }));
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return {
+            ...q,
+            amount: q.amount - 1 > 0 ? q.amount - 1 : 1,
+          };
+        }
+        return q;
+      })
+    );
+  };
+
+  const handleRemovFromArmors = async (itemId, itemSKU) => {
+    setRemovingItem((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await armorModle.addItemToArmors({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        status: "DEL",
+      });
+
+      showPopup("הפריט הוסר בהצלחה!");
+
+      setArmorsItems((prevarmorsItems) => {
+        const newArmorssItems = prevarmorsItems.filter(
+          (armorsItems) => armorsItems.id !== itemId
+        );
+        // If there are no items left, mark cart as empty
+        if (newArmorssItems.length === 0) {
+          SetIsEmpty(true);
+        }
+        return newArmorssItems;
+      });
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.filter((q) => q.id !== itemId)
+      );
+    } catch (e) {
+      console.log("Failed to remove item:", e);
+    } finally {
+      setRemovingItem((prev) => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handleAddItemToCart = async (itemId, itemSKU, newQuantity) => {
+    setAddItemToCart((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      // Call your API to remove the item from the backend:
+      const response = await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToBy: newQuantity,
+      });
+
+      showPopup("הפריט נוסף לעגלה!");
+
+      setArmorsItems((prevarmorsItems) =>
+        prevarmorsItems.map((item) =>
+          item.id === itemId ? { ...item, amount: 1 } : item
+        )
+      );
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => (q.id === itemId ? { ...q, amount: 1 } : q))
+      );
+    } catch (e) {
+      console.log("Failed to Update item:", e);
+    } finally {
+      setAddItemToCart((prev) => ({ ...prev, [itemId]: false }));
+    }
   };
 
   const renderItem = ({ item }) => {
+    const numericNetPrice =
+      parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
+    const numericGrossPrice =
+      parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
+
+    let finalNet = numericNetPrice;
+    if (finalNet === 0) {
+      finalNet = numericGrossPrice / 2;
+    }
+
     const handleQuantityChange = (text, id) => {
-      const numericValue = text.replace(/[^0-9]/g, ""); // Allow only numbers
-      setQuantities((prevQuantities) => ({
-        ...prevQuantities,
-        [id]: numericValue ? parseInt(numericValue, 10) : "", // Keep it empty if no input
-      }));
+      // השארת ספרות בלבד
+      const numericValue = text.replace(/[^0-9]/g, "");
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => {
+          if (q.id === id) {
+            // בדיקה אם הערך ריק או שווה ל-0
+            const newQuantity =
+              !numericValue || parseInt(numericValue, 10) === 0
+                ? 1
+                : parseInt(numericValue, 10);
+
+            return {
+              ...q,
+              amount: newQuantity,
+            };
+          }
+          return q;
+        })
+      );
     };
-    let quantity = quantities[item.id] || 1;
+
+    const foundQuantity = quantities.find((q) => q.id === item.id);
+    const amount = foundQuantity ? foundQuantity.amount : item.amount;
+
+    const handleRemoveItemClick = () => {
+      handleRemovFromArmors(item.id, item.SKU);
+    };
+
+    const handleUpdateItemClick = () => {
+      handleAddItemToCart(item.id, item.SKU, amount);
+    };
 
     return (
       <View style={Cardstyles.card}>
@@ -118,7 +246,7 @@ const ArmorScreen = ({ navigation }) => {
               </View>
               <View style={{ flexDirection: "row" }}>
                 <Text style={Cardstyles.infoTitle}>מחיר : </Text>
-                <Text style={Cardstyles.infoText}>{item.price}</Text>
+                <Text style={Cardstyles.infoText}>₪ {finalNet.toFixed(2)}</Text>
               </View>
               <View style={{ flexDirection: "row" }}>
                 <Text style={Cardstyles.infoTitle}>במלאי : </Text>
@@ -141,7 +269,12 @@ const ArmorScreen = ({ navigation }) => {
             </View>
           </View>
           <View style={Cardstyles.imageData}>
-            <Image style={Cardstyles.image} source={{ uri: item.image }} />
+            <Image
+              style={Cardstyles.image}
+              source={{
+                uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+              }}
+            />
           </View>
         </View>
 
@@ -156,19 +289,10 @@ const ArmorScreen = ({ navigation }) => {
 
             <TextInput
               style={Cardstyles.quantityInput}
-              value={quantity.toString()}
+              value={amount.toString()}
               onChangeText={(text) => handleQuantityChange(text, item.id)}
               keyboardType="numeric"
               selectTextOnFocus={true}
-              onBlur={() => {
-                if (!quantities[item.id]) {
-                  // Default to 1 if input is empty
-                  setQuantities((prevQuantities) => ({
-                    ...prevQuantities,
-                    [item.id]: 1,
-                  }));
-                }
-              }}
             />
 
             <TouchableOpacity
@@ -194,69 +318,114 @@ const ArmorScreen = ({ navigation }) => {
                   justifyContent: "center",
                   alignItems: "center",
                 }}
+                onPress={handleUpdateItemClick}
+                disabled={!!addItemToCart[item.id]} // הטעינה רק לפריט הזה
               >
-                <Text
-                  style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
-                >
-                  הוסף לעגלה
-                </Text>
+                {addItemToCart[item.id] ? (
+                  <ActivityIndicator color="red" />
+                ) : (
+                  <Text
+                    style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+                  >
+                    הוסף לעגלה
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
           <View style={Cardstyles.removeButtonContainer}>
-            <TouchableOpacity style={Cardstyles.removeButton}>
-              <Text style={Cardstyles.removeButtonText}>הסר</Text>
+            <TouchableOpacity
+              style={Cardstyles.removeButton}
+              onPress={handleRemoveItemClick}
+              disabled={!!removingItem[item.id]}
+            >
+              {removingItem[item.id] ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={Cardstyles.removeButtonText}>הסר</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={Cardstyles.priceView}></View>
       </View>
     );
   };
   return (
     <>
-      {!Items ? (
-        <View style={styles.container}>
-          <View style={styles.emptyCartView}>
-            <Icon
-              name="bookmark-multiple-outline"
-              size={70}
-              color="#1A2540"
-              style={styles.serchItemIcon}
-            />
-          </View>
-          <View style={styles.massegeView}>
-            <Text style={styles.mainHader}>אין שריונים</Text>
-            <Text style={styles.SubHader}>השריונים שלך יופיעו כאן</Text>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.container}>
-          <View
-            style={{
-              flex: 1.5,
-              alignItems: "center",
-              justifyContent: "flex-end",
-              bottom: 30,
-            }}
+      <SuccessPopup
+        text={currentPopup?.text || ""}
+        visible={!!currentPopup} // אם currentPopup קיים, נציג
+        onDismiss={handlePopupDismiss}
+        color={currentPopup?.color || "#28A745"}
+      />
+
+      <View style={styles.container}>
+        <View style={styles.hader}>
+          <TouchableOpacity
+            style={styles.rightButton}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={{ fontSize: 30, fontWeight: "bold" }}>שריונים</Text>
-          </View>
-          <View style={styles.ItemsSeparatorFirst} />
-          <View style={{ flex: 9 }}>
-            <FlatList
-              data={Items}
-              renderItem={({ item }) => renderItem({ item })}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => (
-                <View style={styles.ItemsSeparator} />
-              )}
-              showsVerticalScrollIndicator={false}
-            />
+            <Image source={require("../assets/Back.png")} />
+          </TouchableOpacity>
+          <View style={styles.titleWrapper}>
+            <Text style={styles.headerText}>שריונים</Text>
           </View>
         </View>
-      )}
+        <View style={styles.ItemsSeparator} />
+        <>
+          {isEmpty ? (
+            <View style={styles.Data}>
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bottom: 50,
+                  flex: 9,
+                }}
+              >
+                <View style={styles.emptyCartView}>
+                  <Icon
+                    name="book"
+                    size={70}
+                    color="#1A2540"
+                    style={styles.serchItemIcon}
+                  />
+                </View>
+                <View style={styles.massegeView}>
+                  <Text style={styles.mainHader}>אין שריונים</Text>
+                  <Text style={styles.SubHader}>השריונים שלך יופיעו כאן</Text>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.Data}>
+              {loading ? (
+                <View
+                  style={{
+                    height: height * 0.78,
+                    alignContent: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <View style={{ transform: [{ scale: 2 }] }}>
+                    <ActivityIndicator size="large" color="#ED2027" />
+                  </View>
+                </View>
+              ) : (
+                <FlatList
+                  data={armorsItems}
+                  renderItem={({ item }) => renderItem({ item })}
+                  keyExtractor={(item) => item.id}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.ItemsSeparator} />
+                  )}
+                  showsVerticalScrollIndicator={false}
+                />
+              )}
+            </View>
+          )}
+        </>
+      </View>
     </>
   );
 };
@@ -305,12 +474,39 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 30,
     fontWeight: "bold",
-    marginBottom: 10,
     color: "#1A2540",
+    marginBottom: 10,
   },
   SubHader: {
     fontSize: 20,
     color: "#7E7D83",
+  },
+
+  rightButton: {
+    position: "absolute",
+    right: 20,
+    top: 55, // Adjusted to be within the header
+    zIndex: 1,
+  },
+  hader: {
+    flex: 1.3,
+    flexDirection: "row-reverse",
+    alignContent: "center",
+    justifyContent: "center",
+  },
+  titleWrapper: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  headerText: {
+    fontSize: 30,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#1A2540",
+    bottom: 15,
+  },
+  Data: {
+    flex: 8.7,
   },
 });
 const Cardstyles = StyleSheet.create({

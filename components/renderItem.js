@@ -9,24 +9,36 @@ import {
 } from "react-native";
 import itemCardModel from "../model/itemCardModel";
 
-const renderItem = ({ item, navigation, carData }) => {
+const renderItem = ({ item, navigation }) => {
   const hendelOnPress = async () => {
     // Navigate to the ItemCardScreen, passing item details as parameters
-    if (carData) {
+    if (item) {
       try {
+        console.log("====================================");
+        console.log(`PARENT_GROUP: ${item.PARENT_GROUP},
+                ITEM_GROUP: ${item.ITEM_GROUP},
+                CHILD_GROUP: ${item.CHILD_GROUP},
+                MANUFACTURER: ${item.MANUFACTURER},
+                MODEL: ${item.MODEL},
+                CAPACITY: ${item.CAPACITY},
+                FROM_YEAR: ${item.FROM_YEAR},
+                UNTIL_YEAR: ${item.UNTIL_YEAR},
+                YEAR_LIMIT: ${item.YEAR_LIMIT},
+                CAR_NOTE: ${item.CAR_NOTE},
+                DESCRIPTION_NOTE:${item.DESCRIPTION_NOTE},`);
+        console.log("====================================");
         const Brand = await itemCardModel.getItemBrandByCar({
+          PARENT_GROUP: item.PARENT_GROUP,
+          ITEM_GROUP: item.ITEM_GROUP,
           CHILD_GROUP: item.CHILD_GROUP,
+          MANUFACTURER: item.MANUFACTURER,
+          MODEL: item.MODEL,
+          CAPACITY: item.CAPACITY,
+          FROM_YEAR: item.FROM_YEAR,
+          UNTIL_YEAR: item.UNTIL_YEAR,
+          YEAR_LIMIT: item.YEAR_LIMIT,
+          CAR_NOTE: item.CAR_NOTE,
           DESCRIPTION_NOTE: item.DESCRIPTION_NOTE,
-          MANUFACTURER: carData.MANUFACTURER,
-          MODEL: carData.MODEL,
-          MANUFACTURE_YEAR: carData.MANUFACT,
-          YEAR_LIMIT: carData.YEAR_LIMIT,
-          GEAR: carData.GEAR,
-          BODY: carData.BODY,
-          DOORS: carData.DOORS,
-          ENGINE_MODEL: carData.ENGINE_MODEL,
-          PROPULSION: carData.PROPULSION,
-          NOTE: carData.NOTE,
         });
         console.log("====================================");
         console.log("Brand - getItemBrandByCar: " + JSON.stringify(Brand));

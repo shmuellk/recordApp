@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -15,6 +15,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the path
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Button from "../components/Button";
+import SuccessPopup from "../components/SuccessPopup";
+
 const { width, height } = Dimensions.get("window");
 
 const CartScreen = ({ navigation, route }) => {
@@ -25,6 +27,28 @@ const CartScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [removingItem, setRemovingItem] = useState({});
   const [updatingItem, setUpdatingItem] = useState({});
+  const [popupsQueue, setPopupsQueue] = useState([]);
+  const [currentPopup, setCurrentPopup] = useState(null);
+  const [timestamp] = useState(Date.now());
+
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // קח את הראשון בתור והצג אותו
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
+
+  // פונקציה שמציגה פופאפ חדש ומוסיפה אותו לתור
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
+  };
+
+  // כשהפופאפ הנוכחי מסיים, מסירים אותו מהתור ומאפסים, כדי לאפשר לפופאפ הבא לעלות
+  const handlePopupDismiss = () => {
+    setPopupsQueue((prevQueue) => prevQueue.slice(1));
+    setCurrentPopup(null);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -48,7 +72,7 @@ const CartScreen = ({ navigation, route }) => {
           // 2) Transform each item to match the shape you want:
           const transformedData = data.map((item) => ({
             id: item.ID,
-            name: item.CHILD_GROUP + (item.DESCRIPTION_NOTE || ""), // guard against empty
+            name: item.CHILD_GROUP + " " + (item.DESCRIPTION_NOTE || ""), // guard against empty
             carName: item.MODEL,
             net_price: item.NET_PRICE,
             gross_price: item.GROSS_PRICE,
@@ -142,7 +166,7 @@ const CartScreen = ({ navigation, route }) => {
         amountToBy: 0,
       });
 
-      console.log("Removed from cart:", response);
+      showPopup("הפריט הוסר בהצלחה!");
 
       setCartItems((prevCartItems) => {
         const newCartItems = prevCartItems.filter(
@@ -176,7 +200,7 @@ const CartScreen = ({ navigation, route }) => {
         amountToBy: newQuantity,
       });
 
-      console.log("Update the cart:", response);
+      showPopup("הפריט עודכן בהצלחה!");
 
       setCartItems((prevCartItems) =>
         prevCartItems.map((item) =>
@@ -256,9 +280,7 @@ const CartScreen = ({ navigation, route }) => {
             <Image
               style={Cardstyles.image}
               source={{
-                uri: `http://app.record.a-zuzit.co.il:8085/media/${
-                  item.image
-                }.jpg?timestamp=${Date.UTC()}`,
+                uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
               }}
             />
           </View>
@@ -348,6 +370,12 @@ const CartScreen = ({ navigation, route }) => {
 
   return (
     <>
+      <SuccessPopup
+        text={currentPopup?.text || ""}
+        visible={!!currentPopup} // אם currentPopup קיים, נציג
+        onDismiss={handlePopupDismiss}
+        color={currentPopup?.color || "#28A745"}
+      />
       {isEmpty ? (
         <View style={styles.container2}>
           <View style={styles.emptyCartView}>
