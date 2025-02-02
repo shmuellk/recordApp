@@ -89,48 +89,58 @@ const SalesScreen = ({ navigation }) => {
     }));
   };
 
+  const handleQuantityChange = (text, id) => {
+    // אם רוצים לוודא רק מספר > 0
+    const num = parseInt(text, 10);
+    if (!isNaN(num) && num >= 1) {
+      setQuantities((prevQuantities) => ({
+        ...prevQuantities,
+        [id]: num,
+      }));
+    } else {
+      // אם מכניסים ערך לא תקין - נשארים עם הערך הישן
+    }
+  };
+
   const renderItem = ({ item }) => {
     const quantity = quantities[item.id] || 1;
 
     return (
-      <View style={Cardstyles.card}>
-        <View style={Cardstyles.itemDataView}>
-          <View style={Cardstyles.textData}>
-            <Text style={Cardstyles.haderText}>{item.name}</Text>
-            <View>
-              <View style={{ flexDirection: "row" }}>
-                <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
-                <Text style={Cardstyles.infoText}>{item.SKU}</Text>
-              </View>
-              <View style={{ flexDirection: "row" }}>
-                <Text style={Cardstyles.infoTitle}>מחיר : </Text>
-                <Text style={Cardstyles.infoText}>{item.price}</Text>
-              </View>
-            </View>
-          </View>
-          <View style={Cardstyles.imageData}>
-            <Image style={Cardstyles.image} source={{ uri: item.image }} />
-          </View>
+      <View style={styles.cardContainer}>
+        {/* אם יש "מתנה" או "מבצע" שרוצים להציג, אפשר להוסיף כאן תגית פינתית */}
+        {/* לדוגמה */}
+        <View style={styles.promotionBadge}>
+          <Text style={styles.promotionBadgeText}>1 + 10{"\n"}מתנה</Text>
         </View>
 
-        <View style={Cardstyles.amoutAndPriceView}>
-          <View style={Cardstyles.orderQuantity}>
-            <TouchableOpacity
-              onPress={() => decrement(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Minus.png")} />
+        <Image
+          style={styles.cardImage}
+          source={{ uri: item.image }}
+          resizeMode="contain"
+        />
+        <Text style={styles.cardTitle}>{item.SKU}</Text>
+        <Text style={styles.cardSubTitle}>{item.name}</Text>
+        <Text style={styles.cardSubTitle}>{item.carName}</Text>
+        <Text style={styles.cardSubTitle}>{item.year}</Text>
+        <Text style={styles.cardPrice}>{item.price}</Text>
+
+        <View style={styles.quantityAndButtonContainer}>
+          <View style={styles.orderQuantity}>
+            <TouchableOpacity onPress={() => decrement(item.id)}>
+              <Image
+                source={require("../assets/icons/itemCard/Minus.png")}
+                style={styles.quantityBtnIcon}
+              />
             </TouchableOpacity>
 
             <TextInput
-              style={Cardstyles.quantityInput}
+              style={styles.quantityInput}
               value={quantity.toString()}
               onChangeText={(text) => handleQuantityChange(text, item.id)}
               keyboardType="numeric"
               selectTextOnFocus={true}
               onBlur={() => {
                 if (!quantities[item.id]) {
-                  // Default to 1 if input is empty
                   setQuantities((prevQuantities) => ({
                     ...prevQuantities,
                     [item.id]: 1,
@@ -139,53 +149,29 @@ const SalesScreen = ({ navigation }) => {
               }}
             />
 
-            <TouchableOpacity
-              onPress={() => increment(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Plus.png")} />
+            <TouchableOpacity onPress={() => increment(item.id)}>
+              <Image
+                source={require("../assets/icons/itemCard/Plus.png")}
+                style={styles.quantityBtnIcon}
+              />
             </TouchableOpacity>
           </View>
-          {item.amount > 0 && (
-            <View
-              style={{
-                paddingLeft: 10,
-                justifyContent: "center",
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#1A2540",
-                  width: 100, // Same width as the remove button
-                  height: 40, // Same height as the remove button
-                  borderRadius: 15, // Same border radius as the remove button
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
-                >
-                  הוסף לעגלה
-                </Text>
-              </TouchableOpacity>
-            </View>
+          {/* כפתור הוסף לעגלה */}
+          {item.amount > 0 ? (
+            <TouchableOpacity style={styles.addButton}>
+              <Text style={styles.addButtonText}>הוסף לעגלה</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.outOfStockText}>אזל מהמלאי</Text>
           )}
-          <View style={Cardstyles.removeButtonContainer}>
-            <TouchableOpacity style={Cardstyles.removeButton}>
-              <Text style={Cardstyles.removeButtonText}>הסר</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-
-        <View style={Cardstyles.priceView}></View>
       </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.hader}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.rightButton}
           onPress={() => navigation.goBack()}
@@ -198,91 +184,100 @@ const SalesScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.ItemsSeparator} />
-      <>
-        {isEmpty ? (
-          <View style={styles.Data}>
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                bottom: 50,
-                flex: 9,
-              }}
-            >
-              <View style={styles.emptyCartView}>
-                <Icon
-                  name="staro"
-                  size={70}
-                  color="#1A2540"
-                  style={styles.serchItemIcon}
-                />
-              </View>
-              <View style={styles.massegeView}>
-                <Text style={styles.mainHader}>אין מועדפים</Text>
-                <Text style={styles.SubHader}>המועדפים שלך יופיעו כאן</Text>
-              </View>
-            </View>
+
+      {isEmpty ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyCartView}>
+            <Icon name="staro" size={70} color="#1A2540" />
           </View>
-        ) : (
-          <View style={styles.Data}>
-            <FlatList
-              data={Items}
-              renderItem={({ item }) => renderItem({ item })}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => (
-                <View style={styles.ItemsSeparator} />
-              )}
-              showsVerticalScrollIndicator={false}
-            />
+          <View style={styles.massegeView}>
+            <Text style={styles.mainHader}>אין מועדפים</Text>
+            <Text style={styles.SubHader}>המועדפים שלך יופיעו כאן</Text>
           </View>
-        )}
-      </>
+        </View>
+      ) : (
+        <View style={styles.listWrapper}>
+          <FlatList
+            data={Items}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            // הגדרה לשני טורים
+            numColumns={2}
+            columnWrapperStyle={styles.columnWrapper}
+            // ItemSeparatorComponent={() => (
+            //   <View style={styles.ItemsSeparator} />
+            // )}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      )}
     </View>
   );
 };
 
 export default SalesScreen;
 
+// אפשר לשנות את ה־StyleSheets כדי להתאים למבנה רשת, כרטיסים, וכו'.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
-    alignContent: "center",
+    alignItems: "center",
+  },
+  listWrapper: {
+    flex: 1,
+    width: width,
+    // אפשר להוסיף מרווח כראות עיניכם
+  },
+  header: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
+    height: 80, // גובה כותרת
+    width: "100%",
+  },
+  rightButton: {
+    position: "absolute",
+    right: 20,
+    top: 40, // למקם בתוך ה-Header
+    zIndex: 1,
+  },
+  titleWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerText: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#1A2540",
   },
   ItemsSeparator: {
     height: 1.5,
-    width: width * 0.9,
-    alignSelf: "center",
     backgroundColor: "#EBEDF5",
+    width: "90%",
+    alignSelf: "center",
+    marginVertical: 8,
   },
-  ItemsSeparatorFirst: {
-    height: 1.5,
-    width: width,
-    alignSelf: "center",
-    backgroundColor: "#EBEDF5",
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyCartView: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#EBEDF5", // 80 is the hex code for 50% transparency
+    backgroundColor: "#EBEDF5",
     height: 150,
     width: 150,
     borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    flexDirection: "row",
-    elevation: 15,
-    alignItems: "center",
+    elevation: 5,
+    marginBottom: 20,
   },
-
   massegeView: {
     justifyContent: "center",
     alignItems: "center",
   },
   mainHader: {
-    marginTop: 20,
     fontSize: 30,
     fontWeight: "bold",
     color: "#1A2540",
@@ -292,90 +287,57 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#7E7D83",
   },
+  columnWrapper: {
+    // מרווח אופקי בין הכרטיסים באותו טור
+    justifyContent: "space-around",
+  },
 
-  rightButton: {
-    position: "absolute",
-    right: 20,
-    top: 55, // Adjusted to be within the header
-    zIndex: 1,
-  },
-  hader: {
-    flex: 1.3,
-    flexDirection: "row-reverse",
-    alignContent: "center",
-    justifyContent: "center",
-  },
-  titleWrapper: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  headerText: {
-    fontSize: 30,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#1A2540",
-    bottom: 15,
-  },
-  Data: {
-    flex: 8.7,
-  },
-});
-
-const Cardstyles = StyleSheet.create({
-  card: {
-    backgroundColor: "white",
-    width: width,
-    minHeight: 160,
-    maxHeight: 200,
-    paddingHorizontal: 10,
+  /********** עיצוב הכרטיסים **********/
+  cardContainer: {
+    backgroundColor: "#fff",
+    width: width * 0.45, // שני טורים, עם קצת מרווח
+    borderRadius: 10,
+    marginVertical: 8,
     paddingVertical: 10,
+    alignItems: "center",
+
+    // הוספת מסגרת
+    borderWidth: 1,
+    borderColor: "#ccc",
+
+    // צל
+    shadowColor: "#ccc",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  itemDataView: {
-    flex: 7.5,
-    flexDirection: "row",
+  cardImage: {
+    width: 100,
+    height: 100,
+    marginVertical: 5,
   },
-  amoutAndPriceView: {
-    flex: 2.5,
-    flexDirection: "row",
-  },
-  textData: {
-    flex: 7,
-    alignItems: "flex-start",
-    top: 5,
-    paddingHorizontal: 10,
-  },
-  haderText: {
-    fontSize: 18,
+  cardTitle: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#1A2540",
   },
-  infoView: {
-    flexDirection: "row",
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  infoText: {
-    fontSize: 15,
+  cardSubTitle: {
+    fontSize: 14,
     color: "#7E7D83",
   },
-  infoTitle: {
+  cardPrice: {
     fontSize: 16,
-    color: "#1A2540",
+    color: "red",
+    marginVertical: 5,
     fontWeight: "bold",
   },
-  leftText: {
-    alignItems: "flex-start",
-    marginRight: 10,
-  },
-  imageData: {
-    flex: 3,
-    alignItems: "center", // Centering the image
-    justifyContent: "flex-start",
-    bottom: 10,
-  },
-  image: {
-    width: 130, // Set appropriate width
-    height: 130, // Set appropriate height
-    resizeMode: "contain", // Adjust image aspect ratio
+  quantityAndButtonContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "space-around",
+    width: "90%",
+    marginTop: 10,
   },
   orderQuantity: {
     flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
@@ -389,61 +351,64 @@ const Cardstyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 15,
+    marginBottom: 10,
   },
-  button: {
-    // paddingHorizontal: 3, // Adjust to reduce excessive padding
-    paddingVertical: 8, // Match vertical padding for better button size
+  quantityBtnIcon: {
     justifyContent: "center", // Center align the content
     alignItems: "center",
   },
-  quantityText: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  removeButtonContainer: {
-    marginLeft: 10, // Adds spacing between the remove button and quantity selector
-    justifyContent: "center", //
-  },
-  removeButton: {
-    width: 100,
-    height: 40, // Same height as the orderQuantity container
-    backgroundColor: "#EBEDF5",
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  removeButtonText: {
-    color: "black",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  priceView: {
-    position: "absolute",
-    bottom: 15,
-    right: 10,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    alignContent: "center",
-    alignItems: "flex-start",
-  },
-  priceText: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "black",
-    color: "#1A2540",
-  },
   quantityInput: {
-    width: 50, // Adjust width to balance between buttons
-    height: 30, // Reduce height for better fit within the container
+    width: 35,
+    height: 30,
     textAlign: "center",
     borderWidth: 1,
     borderColor: "white",
-    borderRadius: 5,
-    fontSize: 16,
+    backgroundColor: "#fff",
+    marginHorizontal: 5,
     fontWeight: "bold",
     color: "#000",
-    backgroundColor: "#fff",
-    marginHorizontal: 5, // Space between the input and buttons
+  },
+  addButton: {
+    backgroundColor: "#ED2027",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    width: width * 0.4,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    alignContent: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  outOfStockText: {
+    color: "#FF0000",
+    fontWeight: "bold",
+    alignContent: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 10,
+  },
+
+  /******* תגית "1+10 מתנה" וכדומה *******/
+  promotionBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "red",
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    zIndex: 2,
+  },
+  promotionBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
