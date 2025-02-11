@@ -25,8 +25,25 @@ const login = async (data) => {
   }
 };
 
+const getWhatsAppUsers = async () => {
+  try {
+    const response = await axios.get(`${IP}/users/getWhatsAppUsers`);
+
+    if (response.status === 200) {
+      return response.data.result;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error during login request:", error);
+    return [];
+  }
+};
+
 const usersModel = {
   login,
+  getWhatsAppUsers,
 };
 
 export default usersModel;

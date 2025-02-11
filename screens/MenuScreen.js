@@ -15,6 +15,10 @@ const MenuScreen = ({ navigation, route }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const { userData } = route.params;
 
+  console.log("====================================");
+  console.log(userData);
+  console.log("====================================");
+
   const handleConfirm = () => {
     setModalVisible(false); // Close the modal
     navigation.navigate("PrevLog"); // Perform the navigation action
@@ -41,8 +45,8 @@ const MenuScreen = ({ navigation, route }) => {
           style={styles.profileImage}
         /> */}
 
-        <Text style={styles.name}>4U חלטים</Text>
-        <Text style={styles.email}>1234@gmail.com</Text>
+        <Text style={styles.name}>שלום {userData.U_VIEW_NAME}</Text>
+        {/* <Text style={styles.email}>1234@gmail.com</Text> */}
 
         {/* כפתורי פעולה */}
         <View style={styles.actions}>
@@ -171,9 +175,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#ccc",
   },
   name: {
-    fontSize: 18,
+    fontSize: 20,
     color: "#1A2540",
     marginBottom: 5,
+    fontWeight: "bold",
   },
   email: {
     fontSize: 14,

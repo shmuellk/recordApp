@@ -11,7 +11,7 @@ import {
   Dimensions,
   FlatList,
 } from "react-native";
-import renderItem from "../components/renderItem";
+import renderItemProdact from "../components/renderItemProdact";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,7 +19,7 @@ const SkuScreen = ({ navigation, route }) => {
   const filteredItems = route.params.product;
   const CATALOG_NUMBER = route.params.CATALOG_NUMBER;
   console.log("====================================");
-  console.log(filteredItems);
+  console.log("filteredItems: " + JSON.stringify(filteredItems));
   console.log("====================================");
 
   const renderSeparatorItem = () => <View style={styles.ItemsSeparator} />;
@@ -70,7 +70,7 @@ const SkuScreen = ({ navigation, route }) => {
             <FlatList
               data={filteredItems} // Use filteredItems here
               keyExtractor={(item, Index) => Index.toString()}
-              renderItem={({ item }) => renderItem({ item, navigation })}
+              renderItem={({ item }) => renderItemProdact({ item, navigation })}
               ItemSeparatorComponent={renderSeparatorItem}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{

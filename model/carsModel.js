@@ -286,6 +286,51 @@ const getInfoBySKU = async (data) => {
   }
 };
 
+const getProdactsByCHILD_GROUPSerch = async (data) => {
+  try {
+    const MANUFACTURER = data.MANUFACTURER ? data.MANUFACTURER : "";
+    const MODEL = data.MODEL ? data.MODEL : "";
+    const MANUFACTURE_YEAR = data.MANUFACTURE_YEAR ? data.MANUFACTURE_YEAR : "";
+    const ENGINE_MODEL = data.ENGINE_MODEL ? data.ENGINE_MODEL : "";
+    const GEAR = data.GEAR ? data.GEAR : "";
+    const PROPULSION = data.PROPULSION ? data.PROPULSION : "";
+    const DOORS = data.DOORS ? data.DOORS : "";
+    const BODY = data.BODY ? data.BODY : "";
+    const YEAR_LIMIT = data.YEAR_LIMIT ? data.YEAR_LIMIT : "";
+    const NOTE = data.NOTE ? data.NOTE : "";
+    const CHILD_GROUP = data.CHILD_GROUP ? data.CHILD_GROUP : "";
+
+    let response = await axios.get(
+      `${IP}/cars/getProdactsByCHILD_GROUPSerch/`,
+      {
+        params: {
+          MANUFACTURER,
+          MODEL,
+          MANUFACTURE_YEAR,
+          ENGINE_MODEL,
+          GEAR,
+          PROPULSION,
+          DOORS,
+          BODY,
+          YEAR_LIMIT,
+          NOTE,
+          CHILD_GROUP,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      return response.data.result;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error during ProdactsByCHILD_GROUP request:", error.message);
+    return null;
+  }
+};
+
 const carModel = {
   getCarInfo,
   getProdactsByCar,
@@ -295,6 +340,7 @@ const carModel = {
   ProdactsByCHILD_GROUP,
   getProdactsById,
   getInfoBySKU,
+  getProdactsByCHILD_GROUPSerch,
 };
 
 export default carModel;

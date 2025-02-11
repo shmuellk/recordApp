@@ -19,12 +19,10 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
   return (
     // <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.modalOverlay}>
-      {/* Close the modal when touching outside the popup */}
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.backgroundOverlay} />
       </TouchableWithoutFeedback>
 
-      {/* Popup content */}
       <View style={styles.popupContainer}>
         {/* Close button */}
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -89,6 +87,7 @@ const styles = StyleSheet.create({
     alignItems: "center", // Centers popup horizontally
     backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
   },
+
   backgroundOverlay: {
     position: "absolute",
     top: 0,
@@ -108,10 +107,12 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5, // For Android shadow
     maxHeight: height * 0.6,
+    zIndex: 2,
   },
   closeButton: {
     alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", // Aligns close button to the top-left corner
     marginBottom: 10,
+    zIndex: 3,
   },
   header: {
     fontSize: 25,
@@ -145,25 +146,7 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
   },
-  serch: {
-    backgroundColor: "white",
-    height: 50,
-    flexDirection: I18nManager.isRTL ? "row-reverse" : "row", // Reverse the row so the icon is on the right
-    alignItems: "center", // Vertically center the contents
-    justifyContent: "space-between", // Ensures that the text stays on the left and the icon on the right
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    width: width,
-    alignContent: "center",
-    alignSelf: "center",
-  },
-  placeSerch: {
-    flex: 1,
-    textAlign: "right", // Align the text to the left
-    color: "black", // Set a color for the text
-    fontSize: 18,
-    marginHorizontal: 20,
-  },
+
   icon: {
     right: 10,
   },

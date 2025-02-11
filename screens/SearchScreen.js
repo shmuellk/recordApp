@@ -13,6 +13,7 @@ import {
   Keyboard,
   I18nManager,
   ActivityIndicator, // Import to handle RTL/LTR
+  Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome"; // Using Ionicons for the left arrow
 import Button from "../components/Button";
@@ -29,6 +30,7 @@ const SearchScreen = ({ navigation, route }) => {
   const [selectedTab, setSelectedTab] = useState("SerchByCarNumber");
   const animatedHeight = useRef(new Animated.Value(height * 0.46)).current;
   const [carNumber, setCarNumber] = useState("");
+  const [sendCarNumber, setSendCarNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [manufacturers, setManufacturers] = useState([]);
   const [model, setModel] = useState([]);
@@ -44,6 +46,18 @@ const SearchScreen = ({ navigation, route }) => {
   const [searchEnabled, setSearchEnabled] = useState(false); // Loader state for search button
   const [SDkserchInput, setSDkserchInput] = useState("");
   const [SDKData, setSDKData] = useState([]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleConfirm = () => {
+    // Perform any confirm action (e.g., logout, navigate, etc.)
+    setModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setModalVisible(false);
+    navigation.navigate("ContactScreen");
+  };
 
   useEffect(() => {
     fatchSDKSerch = async () => {
@@ -439,6 +453,7 @@ const SearchScreen = ({ navigation, route }) => {
       DOORS: false,
       BODY: false,
     });
+    setSendCarNumber(carNumber);
     setCarNumber("");
     Keyboard.dismiss();
     setSDkserchInput("");
@@ -476,6 +491,7 @@ const SearchScreen = ({ navigation, route }) => {
             userName: userData.U_VIEW_NAME,
             carData: searchJson,
             category: category,
+            carNumber: sendCarNumber,
           });
         } else {
           console.log("====================================");
@@ -497,27 +513,34 @@ const SearchScreen = ({ navigation, route }) => {
       setLoading(true);
       try {
         let carInfo = await carModel.getCarInfo(carNumber);
-        if (carInfo) {
+        // If carInfo is empty, show the modal
+        if (
+          !carInfo ||
+          (typeof carInfo === "object" && Object.keys(carInfo).length === 0)
+        ) {
+          setModalVisible(true);
+        } else {
           setSearchJson(carInfo);
+          setSearchEnabled(true);
+          setSendCarNumber(carNumber);
+          setCarNumber("");
+          setFiltersEnabled({
+            MANUFACTURER: true,
+            MODEL: false,
+            MANUFACTURE_YEAR: false,
+            ENGINE_MODEL: false,
+            CAPACITY: false,
+            GAS: false,
+            GEAR: false,
+            PROPULSION: false,
+            DOORS: false,
+            BODY: false,
+          });
         }
-        setSearchEnabled(true);
-        setCarNumber("");
-        setFiltersEnabled({
-          MANUFACTURER: true,
-          MODEL: false,
-          MANUFACTURE_YEAR: false,
-          ENGINE_MODEL: false,
-          CAPACITY: false,
-          GAS: false,
-          GEAR: false,
-          PROPULSION: false,
-          DOORS: false,
-          BODY: false,
-        });
       } catch (error) {
         console.error("Error fetching car info:", error);
       } finally {
-        setLoading(false); // Hide loader
+        setLoading(false);
       }
     }
   };
@@ -554,12 +577,17 @@ const SearchScreen = ({ navigation, route }) => {
       const product = await carModel.getProdactsById({
         CATALOG_NUMBER: item,
       });
+
+      console.log("====================================");
+      console.log("product: " + JSON.stringify(product));
+      console.log("====================================");
       if (product.length > 1) {
         Keyboard.dismiss();
         navigation.navigate("SkuScreen", {
           userName: userData.U_VIEW_NAME,
           product: product,
           CATALOG_NUMBER: item,
+          carNumber: sendCarNumber,
         });
       } else if (product.length == 1) {
         Keyboard.dismiss();
@@ -572,7 +600,11 @@ const SearchScreen = ({ navigation, route }) => {
           console.log("====================================");
           console.log("Brand: " + JSON.stringify(Brand));
           console.log("====================================");
-          navigation.navigate("ItemCardScreen", { item: product[0], Brand });
+          navigation.navigate("ItemCardScreen", {
+            item: product[0],
+            Brand,
+            carNumber: sendCarNumber,
+          });
         } catch (error) {
           console.log("====================================");
           console.log("Error: " + error);
@@ -815,11 +847,6 @@ const SearchScreen = ({ navigation, route }) => {
                   textAlign={I18nManager.isRTL ? "right" : "right"} // Dynamic alignment for RTL/LTR
                   onChangeText={(text) => {
                     setSDkserchInput(text);
-                    if (SDkserchInput != "") {
-                      setSearchEnabled(true);
-                    } else {
-                      setSearchEnabled(false);
-                    }
                   }}
                   value={SDkserchInput}
                 />
@@ -860,6 +887,34 @@ const SearchScreen = ({ navigation, route }) => {
             />
           </View>
         )}
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>מצטערים</Text>
+              <Text style={styles.modalMessage}>לא נמצא מספר רכב זה</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.confirmButton}
+                  onPress={handleConfirm}
+                >
+                  <Text style={styles.buttonText}>חיפוש ידני</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleCancel}
+                >
+                  <Text style={styles.buttonText}>צור קשר</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -1020,6 +1075,57 @@ const styles = StyleSheet.create({
     color: "#BDC3C7",
     fontSize: 18,
     left: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  buttonContainer: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+  },
+  confirmButton: {
+    backgroundColor: "#ED2027",
+    borderRadius: 10,
+    width: 80,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginHorizontal: 15,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ccc",
+    borderRadius: 10,
+    width: 80,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginHorizontal: 15,
   },
 });
 

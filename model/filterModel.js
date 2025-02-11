@@ -307,6 +307,43 @@ const getAlternativeSKU = async (data) => {
   }
 };
 
+const getComplitSerch = async (data) => {
+  const search_value = data.search_value;
+  try {
+    let response = await axios.get(`${IP}/filter/getComplitSerch`, {
+      params: {
+        search_value,
+      },
+    });
+    if (response.status === 200) {
+      let tempArray = response.data.result
+        .map((item) => item.result_value.split(",")) // Split each result_value by commas
+        .flat() // Flatten the nested arrays into one array
+        .map((item) => item.trim()) // Remove any extra spaces around items
+        .filter(
+          (item, index, self) =>
+            self.findIndex((i) => i.toLowerCase() === item.toLowerCase()) ===
+            index // Ensure distinct (case-insensitive)
+        )
+        .filter((item) =>
+          item.toLowerCase().includes(search_value.toLowerCase())
+        ) // Case-insensitive filtering
+        .slice(0, 10); // Take the first 10 items
+
+      console.log("====================================");
+      console.log("tempArray : " + tempArray);
+      console.log("====================================");
+      return tempArray;
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error during getAlternativeSKU request:", error.message);
+    return null;
+  }
+};
+
 const filterModel = {
   getManufacturer,
   getAllModel,
@@ -319,5 +356,6 @@ const filterModel = {
   getAllDoors,
   getAllBooy,
   getAlternativeSKU,
+  getComplitSerch,
 };
 export default filterModel;

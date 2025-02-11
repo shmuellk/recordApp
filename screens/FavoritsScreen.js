@@ -171,6 +171,7 @@ const FavoritsScreen = ({ navigation, route }) => {
         cardCode: userData.U_CARD_CODE,
         item_code: itemSKU,
         amountToBy: newQuantity,
+        status: "ADD",
       });
 
       showPopup("הפריט נוסף לעגלה!");

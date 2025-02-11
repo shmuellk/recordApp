@@ -15,7 +15,7 @@ import itemCardModel from "../model/itemCardModel";
 
 const { width } = Dimensions.get("window");
 
-const InfoButton = ({ placeholder, type, car }) => {
+const InfoButton = ({ placeholder, type, car, catalog_number }) => {
   const [openPopUp, setOpenPopUp] = useState(false);
   const [RecentShoppingPopData, setRecentShoppingPopData] = useState([]);
   const [VehiclesPopData, setVehiclesPopData] = useState([]);
@@ -23,21 +23,22 @@ const InfoButton = ({ placeholder, type, car }) => {
   const fetchData = async () => {
     try {
       // Simulate fetching data (replace with your API or data-fetch logic)
+
       if (type === 1) {
         let data = await itemCardModel.getRecentShopping({
-          CATALOG_NUMBER: car.CATALOG_NUMBER,
+          CATALOG_NUMBER: catalog_number,
         });
         setRecentShoppingPopData(data);
       }
       if (type === 2) {
         let data = await itemCardModel.getCarsByItem({
-          CATALOG_NUMBER: car.CATALOG_NUMBER,
+          CATALOG_NUMBER: catalog_number,
         });
         setVehiclesPopData(data);
       }
       if (type === 3) {
         let data = await itemCardModel.getAlternativeSkus({
-          CATALOG_NUMBER: car.CATALOG_NUMBER,
+          CATALOG_NUMBER: catalog_number,
         });
 
         setAlternateSKUPopData(data);
@@ -73,24 +74,24 @@ const InfoButton = ({ placeholder, type, car }) => {
           <RecentShoppingPop
             data={RecentShoppingPopData}
             onClose={togglePopUp}
-            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
+            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            subTitle={"קניות אחרונות"} // Safe check for car.carName
           />
         )}
         {type == 2 && (
           <VehiclesPop
             data={VehiclesPopData}
             onClose={togglePopUp}
-            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
+            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            subTitle={"רכבים"} // Safe check for car.carName
           />
         )}
         {type == 3 && (
           <AlternateSKUPop
             data={AlternateSKUPopData}
             onClose={togglePopUp}
-            title={car ? car.CATALOG_NUMBER : "Unknown"} // Safe check for car.name
-            subTitle={car ? car.MODEL : ""} // Safe check for car.carName
+            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            subTitle={"מקטים חלופיים"} // Safe check for car.carName
           />
         )}
       </Modal>

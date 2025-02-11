@@ -109,9 +109,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5, // For Android shadow
     maxHeight: height * 0.8,
+    zIndex: 2,
     minHeight: height * 0.3,
   },
   closeButton: {
+    zIndex: 3,
     alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", // Aligns close button to the top-left corner
   },
   header: {

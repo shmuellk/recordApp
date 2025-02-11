@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Keyboard,
   View,
@@ -7,10 +7,13 @@ import {
   Text,
   Dimensions,
   TouchableWithoutFeedback,
-  I18nManager, // Import I18nManager for RTL/LTR handling
+  I18nManager,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 
-import COLORS from "../components/colors"; // Ensure this path is correct
+import COLORS from "../components/colors";
 import Button from "../components/Button";
 import Input from "../components/lnputs";
 import usersModel from "../model/usersModel";
@@ -22,9 +25,14 @@ const LogInScreen = ({ navigation }) => {
     userName: "",
     password: "",
   });
-
   const [errors, setErrors] = useState({});
+
+  // state and ref to track which input is focused
+  const [focusedInput, setFocusedInput] = useState(null);
+  const focusedInputRef = useRef(null);
+
   const passwordRef = useRef(null);
+  const scrollViewRef = useRef(null);
 
   const handleOnChange = (text, input) => {
     setInputs((prevState) => ({ ...prevState, [input]: text }));
@@ -36,6 +44,12 @@ const LogInScreen = ({ navigation }) => {
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
+  };
+
+  // פונקציה לעדכון שדה המוקד
+  const handleSetFocus = (field) => {
+    setFocusedInput(field);
+    focusedInputRef.current = field;
   };
 
   const logIn = async () => {
@@ -55,55 +69,101 @@ const LogInScreen = ({ navigation }) => {
       console.log("error = " + err);
       console.log("====================================");
     }
-
-    // navigation.navigate("App", { userName: inputs.userName });
   };
 
+  // מאזינים לאירועי המקלדת ומגלים למרכז את התוכן,
+  // אך לא כאשר המוקד הוא על שדה ה-userName או על שדה ה-password
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (event) => {
+        if (
+          focusedInputRef.current !== "password" &&
+          focusedInputRef.current !== "userName"
+        ) {
+          const keyboardHeight = event.endCoordinates.height;
+          // מחשבים את מיקום הגלילה כך שהתוכן יהיה במרכז בין המקלדת לחלק העליון
+          const scrollOffset = (height - keyboardHeight) / 2;
+          if (scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: scrollOffset, animated: true });
+          }
+        }
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: 0, animated: true });
+        }
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <View style={responsiveStyles.safeArea}>
-        <Image
-          style={responsiveStyles.image}
-          source={require("../assets/logo.png")}
-        />
-        <View style={responsiveStyles.textContainer}>
-          <Text style={responsiveStyles.header}>כניסת לקוחות</Text>
-          <Text style={responsiveStyles.subText}>הכנס שם משתמש וסיסמא</Text>
-        </View>
-        <View style={responsiveStyles.inputContainer}>
-          <Input
-            placeholder="שם משתמש"
-            label="שם משתמש"
-            autoFocus={true}
-            error={errors.userName}
-            onFocus={() => {
-              handleError(null, "userName");
-            }}
-            onChangeText={(text) => handleOnChange(text, "userName")}
-            value={inputs.userName}
-            onSubmitEditing={() => passwordRef.current.focus()}
-            returnKeyType="next"
-          />
-          <Input
-            placeholder="סיסמא"
-            label="סיסמא"
-            password
-            error={errors.password}
-            onFocus={() => {
-              handleError(null, "password");
-            }}
-            onChangeText={(text) => handleOnChange(text, "password")}
-            value={inputs.password}
-            ref={passwordRef}
-            onSubmitEditing={logIn}
-            returnKeyType="done"
-          />
-          <View style={{ top: 20 }}>
-            <Button title="התחבר" onPress={logIn} enable={true} />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : null}
+    >
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableWithoutFeedback onPress={dismissKeyboard}>
+          <View style={responsiveStyles.safeArea}>
+            <Image
+              style={responsiveStyles.image}
+              source={require("../assets/logo.png")}
+            />
+            <View style={responsiveStyles.textContainer}>
+              <Text style={responsiveStyles.header}>כניסת לקוחות</Text>
+              <Text style={responsiveStyles.subText}>הכנס שם משתמש וסיסמא</Text>
+            </View>
+            <View style={responsiveStyles.inputContainer}>
+              <Input
+                placeholder="שם משתמש"
+                label="שם משתמש"
+                autoFocus={true}
+                error={errors.userName}
+                onFocus={() => {
+                  handleError(null, "userName");
+                  handleSetFocus("userName");
+                }}
+                onChangeText={(text) => handleOnChange(text, "userName")}
+                value={inputs.userName}
+                onSubmitEditing={() => passwordRef.current.focus()}
+                returnKeyType="next"
+              />
+              <Input
+                placeholder="סיסמא"
+                label="סיסמא"
+                password
+                error={errors.password}
+                onFocus={() => {
+                  handleError(null, "password");
+                  handleSetFocus("password");
+                }}
+                onChangeText={(text) => handleOnChange(text, "password")}
+                value={inputs.password}
+                ref={passwordRef}
+                onSubmitEditing={logIn}
+                returnKeyType="done"
+              />
+              <View style={{ top: 20 }}>
+                <Button title="התחבר" onPress={logIn} enable={true} />
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
-    </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -118,7 +178,7 @@ const responsiveStyles = StyleSheet.create({
   },
   image: {
     top: height * 0.15,
-    alignSelf: I18nManager.isRTL ? "center" : "center", // Adjust based on RTL/LTR
+    alignSelf: "center",
     resizeMode: "stretch",
   },
   inputContainer: {
@@ -130,7 +190,7 @@ const responsiveStyles = StyleSheet.create({
   textContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end", // Adjust text alignment based on RTL/LTR
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
     top: height * 0.2,
   },
   header: {

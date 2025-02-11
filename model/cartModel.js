@@ -30,13 +30,7 @@ const addItemToCart = async (data) => {
   const cardCode = data.cardCode ? data.cardCode : "";
   const item_code = data.item_code ? data.item_code : "";
   const amountToBy = data.amountToBy ? data.amountToBy : 0;
-
-  console.log("====================================");
-  console.log("userName : " + userName);
-  console.log("cardCode : " + cardCode);
-  console.log("item_code : " + item_code);
-  console.log("amountToBy : " + amountToBy);
-  console.log("====================================");
+  const status = data.status ? data.status : "";
 
   try {
     const response = await axios.get(`${IP}/cart/addItemToCart`, {
@@ -45,6 +39,7 @@ const addItemToCart = async (data) => {
         cardCode,
         item_code,
         amountToBy,
+        status,
       },
     });
 

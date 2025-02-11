@@ -13,15 +13,29 @@ import {
   Keyboard,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather"; // Using Ionicons for the left arrow
 import renderItem from "../components/renderItem";
 import carModel from "../model/carsModel";
 import CarInfoPop from "../components/CarInfoPop";
+import filterModel from "../model/filterModel";
+import usersModel from "../model/usersModel";
+import Icon2 from "react-native-vector-icons/FontAwesome";
+
 const { width, height } = Dimensions.get("window");
 
+const chunkData = (data, chunkSize) => {
+  const chunks = [];
+  for (let i = 0; i < data.length; i += chunkSize) {
+    chunks.push(data.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
 const ItemScreen = ({ navigation, route }) => {
-  const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [filteredItems, setFilteredItems] = useState([]); // State for filtered items
   const [showImage, setShowImage] = useState(false); // State for image display
   const [currentCategory, setCurrentCategory] = useState("MainCategory"); // Track current category level
@@ -31,8 +45,41 @@ const ItemScreen = ({ navigation, route }) => {
   const [selectedCHILD_GROUP, setSelectedCHILD_GROUP] = useState(null); // Track the selected category
   const [loader, setLoader] = useState(false);
   const [openPopUp, setOpenPopUp] = useState(false);
+  const [serchInput, setSerchInput] = useState("");
+  const [sendSerchInput, setSendSerchInput] = useState("");
+  const [serchData, setSerchData] = useState([]);
+  const { category, carData, carNumber } = route.params;
+  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [whatsappData, setWhtsappData] = useState([]);
 
-  const { category, carData } = route.params;
+  useEffect(() => {
+    const fetchWhatsappData = async () => {
+      const data = await usersModel.getWhatsAppUsers();
+      setWhtsappData(data);
+    };
+    fetchWhatsappData();
+  }, []);
+
+  useEffect(() => {
+    fatchSDKSerch = async () => {
+      if (serchInput != "" && serchInput.length > 1) {
+        try {
+          let temp = await filterModel.getComplitSerch({
+            search_value: serchInput,
+          });
+
+          setSerchData(temp || []);
+        } catch (error) {
+          console.log("====================================");
+          console.log("error : " + error);
+          console.log("====================================");
+        }
+      } else {
+        setSerchData([]);
+      }
+    };
+    fatchSDKSerch();
+  }, [serchInput]);
 
   const MainCategory = category
     .filter(
@@ -67,11 +114,45 @@ const ItemScreen = ({ navigation, route }) => {
   const [categories, setCategories] = useState(MainCategory);
 
   // Filter function based on the search query
-  const handleSearch = (text) => {
-    setSearchQuery(text);
+  const handleSelectSerch = async (item) => {
+    Keyboard.dismiss();
+    setSendSerchInput(item);
+    setSerchInput("");
+    setSerchData([]);
+    setSearchPerformed(true); // Mark that a search was performed
+    try {
+      setLoader(true);
+      const response = await carModel.getProdactsByCHILD_GROUPSerch({
+        MANUFACTURER: carData.MANUFACTURER,
+        MODEL: carData.MODEL,
+        MANUFACTURE_YEAR: carData.MANUFACTURE_YEAR,
+        ENGINE_MODEL: carData.ENGINE_MODEL,
+        GEAR: carData.GEAR,
+        PROPULSION: carData.PROPULSION,
+        DOORS: carData.DOORS,
+        BODY: carData.BODY,
+        YEAR_LIMIT: carData.YEAR_LIMIT,
+        NOTE: carData.NOTE,
+        CHILD_GROUP: item,
+      });
+
+      console.log("====================================");
+      console.log("response : " + JSON.stringify(response));
+      console.log("====================================");
+      setFilteredItems(response);
+    } catch (err) {
+      console.log("====================================");
+      console.log("error: " + err.message);
+      console.log("====================================");
+    } finally {
+      setLoader(false);
+    }
   };
 
   const hendelCategoryChose = (category) => {
+    setSerchData([]);
+    setSendSerchInput(serchInput);
+    setSerchInput("");
     if (currentCategory === "MainCategory") {
       let categoryTemp = SubCategory.filter(
         (sub) => sub.main === category.name
@@ -171,9 +252,7 @@ const ItemScreen = ({ navigation, route }) => {
             YEAR_LIMIT: carData.YEAR_LIMIT,
             NOTE: carData.NOTE,
           });
-          console.log("====================================");
-          console.log("response = " + JSON.stringify(response));
-          console.log("====================================");
+
           setFilteredItems(response);
         } catch (err) {
           console.log("====================================");
@@ -275,6 +354,44 @@ const ItemScreen = ({ navigation, route }) => {
     ProdactsByCHILD_GROUP();
   }, [selectedCHILD_GROUP]);
 
+  const renderWhatsappUser = (item) => {
+    return (
+      <TouchableOpacity onPress={() => openWhatsApp(`${item.phone}`)}>
+        <View style={styles.addresViewText}>
+          <View style={styles.iconContainer}>
+            <Icon2 name="whatsapp" size={30} color="#1A2540" />
+          </View>
+          <Text style={styles.addresText}>{item.name}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // פונקציה לפתיחת WhatsApp עם מספר הטלפון המבוקש
+  const openWhatsApp = async (phoneNumber) => {
+    const searchValue = sendSerchInput || "פריט לא מוגדר";
+
+    const message = `שלום.
+אני מעוניין לקבל פרטים על "${searchValue}" עבור רכב : ${carNumber}`;
+    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(
+      message
+    )}`;
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        alert("WhatsApp לא מותקן במכשיר זה");
+      }
+    } catch (error) {
+      console.error("An error occurred", error);
+      alert("WhatsApp לא מותקן במכשיר זה");
+    }
+  };
+
+  // חלוקת הנתונים לעמודות: בכל עמודה עד 3 פריטים
+  const columns = chunkData(whatsappData, 3);
+
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View style={{ flex: 1, backgroundColor: "white" }}>
@@ -304,136 +421,234 @@ const ItemScreen = ({ navigation, route }) => {
         </View>
 
         {/* Middle Bar */}
-        <View style={styles.midelBar}>
-          <View style={styles.categoryButton}>
-            <TouchableOpacity
-              style={styles.categoryButtonIn}
-              onPress={hendelBackFromCategory}
-            >
-              {showImage && (
-                <Image
-                  style={styles.categoryButtonIcon}
-                  source={require("../assets/RedBackArrow.png")}
-                />
-              )}
-              <View style={styles.categoryButtonTextContainer}>
-                <Text style={styles.categoryButtonText}>
-                  {currentCategory === "MainCategory"
-                    ? "קטגוריות"
-                    : currentCategory === "SubCategory"
-                    ? selectedPARENT_GROUP
-                    : selectedITEM_GROUP}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.serchItem}>
-            <TextInput
-              placeholder="חפש פריט..."
-              value={searchQuery}
-              onChangeText={handleSearch}
-              style={styles.serchItemText}
-            />
-            <Icon
-              name="search"
-              size={25}
-              color="black"
-              style={styles.serchItemIcon}
-            />
-          </View>
-        </View>
-
-        {/* Category and Items */}
-        <View
-          style={{
-            flex: 7.5,
-            flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-            backgroundColor: "#f8f8f8",
-          }}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }} // adjust paddingTop to header height
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          {filteredItems.length > 0 ? (
-            <View
-              style={{
-                flex: 7.5,
-                flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                backgroundColor: "#f8f8f8",
-              }}
-            >
-              <View
-                id="category"
-                style={{ flex: 3.5, backgroundColor: "white" }}
+          <View style={styles.midelBar}>
+            <View style={styles.categoryButton}>
+              <TouchableOpacity
+                style={styles.categoryButtonIn}
+                onPress={hendelBackFromCategory}
               >
-                <FlatList
-                  data={categories}
-                  renderItem={renderCategory}
-                  keyExtractor={(item) => item.id}
-                  showsVerticalScrollIndicator={false}
-                />
-              </View>
-
-              <View
-                id="itemList"
-                style={{
-                  flex: 6.5,
-                  backgroundColor: "#ffffff",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                {loader ? (
-                  <View style={{ transform: [{ scale: 2 }] }}>
-                    <ActivityIndicator size="large" color="#d01117" />
-                  </View>
-                ) : (
-                  <FlatList
-                    data={filteredItems} // Use filteredItems here
-                    keyExtractor={(item, Index) => Index.toString()}
-                    renderItem={({ item }) =>
-                      renderItem({ item, navigation, carData })
-                    }
-                    ItemSeparatorComponent={
-                      filteredItems.length > 1 ? renderSeparatorItem : null
-                    } // No separator for single item
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{
-                      flexGrow: 1,
-                      alignItems: "flex-end", // Align items properly
-                      alignContent: "flex-end",
-                      alignSelf: "flex-end",
-                    }}
+                {showImage && (
+                  <Image
+                    style={styles.categoryButtonIcon}
+                    source={require("../assets/RedBackArrow.png")}
                   />
                 )}
-              </View>
+                <View style={styles.categoryButtonTextContainer}>
+                  <Text style={styles.categoryButtonText}>
+                    {currentCategory === "MainCategory"
+                      ? "קטגוריות"
+                      : currentCategory === "SubCategory"
+                      ? selectedPARENT_GROUP
+                      : selectedITEM_GROUP}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                alignContent: "center",
-                alignSelf: "center",
-                bottom: 30,
-              }}
-            >
-              <Image
-                style={styles.InfoCar}
-                source={require("../assets/icons/searchIcons/no_result.png")}
-              />
-              <Text style={{ fontSize: 25 }}>אין פריטים לרכב זה</Text>
-            </View>
-          )}
-        </View>
 
-        <Modal
-          visible={openPopUp}
-          transparent={true}
-          animationType="slide" // Animates the popup from the bottom
-          onRequestClose={togglePopUp} // Closes the modal on Android back button
-        >
-          <CarInfoPop data={carData} onClose={togglePopUp} />
-        </Modal>
+            <View style={styles.serchItem}>
+              <TextInput
+                placeholder="חפש פריט..."
+                style={styles.serchItemText}
+                textAlign={I18nManager.isRTL ? "right" : "right"} // Dynamic alignment for RTL/LTR
+                onChangeText={(text) => {
+                  setSerchInput(text);
+                }}
+                value={serchInput}
+                returnKeyType="search" // Changes the return key label to "Search"
+              />
+              <Icon
+                name="search"
+                size={25}
+                color="black"
+                style={styles.serchItemIcon}
+              />
+            </View>
+
+            {serchData.length > 0 ? (
+              <View style={styles.suggestionsContainer}>
+                <FlatList
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  data={serchData}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => handleSelectSerch(item)}>
+                      <Text style={styles.suggestionText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            ) : (
+              serchInput.length > 1 && (
+                <View style={styles.nosuggestionsContainer}>
+                  <Text style={styles.suggestionText}>
+                    אין פריטים תואמים לחיפוש
+                  </Text>
+                </View>
+              )
+            )}
+          </View>
+
+          {/* Category and Items */}
+          <View
+            style={{
+              flex: 7.5,
+              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+              backgroundColor: "#f8f8f8",
+            }}
+          >
+            {filteredItems.length > 0 ? (
+              // When items are available, show the normal view:
+              <View
+                style={{
+                  flex: 7.5,
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  backgroundColor: "#f8f8f8",
+                }}
+              >
+                <View style={{ flex: 3.5, backgroundColor: "white" }}>
+                  <FlatList
+                    data={categories}
+                    renderItem={renderCategory}
+                    keyExtractor={(item) => item.id.toString()}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </View>
+                <View
+                  style={{
+                    flex: 6.5,
+                    backgroundColor: "#ffffff",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  {loader ? (
+                    <View style={{ transform: [{ scale: 2 }] }}>
+                      <ActivityIndicator size="large" color="#d01117" />
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={filteredItems}
+                      keyExtractor={(item, index) => index.toString()}
+                      renderItem={({ item }) =>
+                        renderItem({ item, navigation, carData })
+                      }
+                      ItemSeparatorComponent={
+                        filteredItems.length > 1 ? renderSeparatorItem : null
+                      }
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{
+                        flexGrow: 1,
+                        alignItems: "flex-end",
+                        alignContent: "flex-end",
+                        alignSelf: "flex-end",
+                      }}
+                    />
+                  )}
+                </View>
+              </View>
+            ) : // When no items are available, choose between two UI variants:
+            searchPerformed ? (
+              // Snippet A: When a search was performed and no items were found
+              <>
+                <View style={{ flex: 3.5 }}>
+                  <FlatList
+                    data={categories}
+                    renderItem={renderCategory}
+                    keyExtractor={(item) => item.id.toString()}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </View>
+                <View
+                  style={{
+                    flex: 6.5,
+                    alignItems: "center",
+                    top: height * 0.1,
+                  }}
+                >
+                  <Image
+                    style={styles.InfoCar}
+                    source={require("../assets/icons/searchIcons/no_result.png")}
+                  />
+                  <Text style={{ fontSize: width * 0.075 }}>
+                    פריט זה לא נמצא{" "}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: width * 0.04,
+                      marginTop: 5,
+                      marginBottom: 10,
+                      color: "#ED2027",
+                    }}
+                  >
+                    לבקשת פריט התחל שיחה עם :
+                  </Text>
+
+                  <FlatList
+                    data={columns} // מערך העמודות
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(_, index) => index.toString()}
+                    renderItem={({ item: columnItems }) => (
+                      <View style={styles.column}>
+                        {columnItems.map((user) => (
+                          <View key={user.id} style={styles.item}>
+                            {renderWhatsappUser(user)}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  />
+                </View>
+              </>
+            ) : (
+              // Snippet B: When no search has been performed yet
+              <>
+                <View
+                  style={{
+                    flex: 7.5,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    alignContent: "center",
+                    alignSelf: "center",
+                    alignContent: "center",
+                    bottom: 30,
+                  }}
+                >
+                  <Image
+                    style={styles.InfoCar}
+                    source={require("../assets/icons/searchIcons/no_result.png")}
+                  />
+                  <Text style={{ fontSize: 25 }}>אין פריטים לרכב זה</Text>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={{ fontSize: 20 }}>לקבלת מידע נוסף: </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        navigation.navigate("ContactScreen");
+                      }}
+                    >
+                      <Text style={{ fontSize: 20, color: "#d01117" }}>
+                        צור קשר
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+          <Modal
+            visible={openPopUp}
+            transparent={true}
+            animationType="slide" // Animates the popup from the bottom
+            onRequestClose={togglePopUp} // Closes the modal on Android back button
+          >
+            <CarInfoPop data={carData} onClose={togglePopUp} />
+          </Modal>
+        </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -462,13 +677,19 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   hader: {
-    flex: 1.5,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80, // set this to your header's height
     backgroundColor: "white",
+    zIndex: 100, // ensure it stays above other content
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginTop: 20,
+    paddingTop: 20,
+    height: height * 0.15,
   },
   haderTitel: {
     fontWeight: "bold",
@@ -555,6 +776,7 @@ const styles = StyleSheet.create({
   },
   midelBar: {
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    paddingTop: height * 0.15,
   },
   categoryButton: {
     flex: 3.5,
@@ -566,7 +788,7 @@ const styles = StyleSheet.create({
     justifyContent: "center", // Center the content as needed
     alignItems: "center", // Vertically center text and icon
     width: "100%", // Ensure the button takes the full width
-    height: 55,
+    height: height * 0.075,
     backgroundColor: "#1A2540", //קטגוריה
     position: "relative", // Allows for absolute positioning of the image
   },
@@ -596,7 +818,7 @@ const styles = StyleSheet.create({
     flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
     justifyContent: I18nManager.isRTL ? "flex-end" : "flex-start",
     alignItems: "center",
-    height: 55,
+    height: height * 0.075,
     borderWidth: 1.5,
     borderColor: "#E0E0E0",
   },
@@ -609,5 +831,74 @@ const styles = StyleSheet.create({
   },
   serchItemIcon: {
     right: 10,
+  },
+  suggestionsContainer: {
+    position: "absolute",
+    top: height * 0.22, // בדיוק אחרי גובה שדה החיפוש
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    maxHeight: height * 0.35,
+    zIndex: 999,
+    width: width * 0.65,
+    alignItems: "center",
+  },
+  nosuggestionsContainer: {
+    position: "absolute",
+    top: height * 0.22, // בדיוק אחרי גובה שדה החיפוש
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    maxHeight: height * 0.35,
+    zIndex: 999,
+    width: width * 0.65,
+    alignItems: "center",
+  },
+  suggestionText: {
+    padding: 12,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    textAlign: "center",
+  },
+  noItemsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    bottom: 30,
+  },
+
+  addresViewText: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  iconContainer: {
+    // backgroundColor: "#EBEDF5",
+    padding: 5,
+    borderRadius: 10,
+  },
+  column: {
+    marginHorizontal: width * 0.001,
+    justifyContent: "flex-start",
+  },
+  item: {
+    marginBottom: 10,
+  },
+  phonsNumView: {
+    flex: 2.5,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  addresText: {
+    fontSize: width * 0.045,
+    textDecorationLine: "underline",
+    color: "#1A2540",
+    fontWeight: "bold",
   },
 });

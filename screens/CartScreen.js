@@ -153,7 +153,10 @@ const CartScreen = ({ navigation, route }) => {
     // Return formatted string
     return "₪ " + total.toFixed(2);
   };
-  const hendelOnClick = () => {};
+  const hendelOnClick = () => {
+    const totalPrice = calculateTotalPrice();
+    navigation.navigate("PaymentScreen", { userData, totalPrice });
+  };
 
   const handleRemovFromCart = async (itemId, itemSKU) => {
     setRemovingItem((prev) => ({ ...prev, [itemId]: true }));
@@ -164,6 +167,7 @@ const CartScreen = ({ navigation, route }) => {
         cardCode: userData.U_CARD_CODE,
         item_code: itemSKU,
         amountToBy: 0,
+        status: "UPDATE",
       });
 
       showPopup("הפריט הוסר בהצלחה!");
@@ -198,6 +202,7 @@ const CartScreen = ({ navigation, route }) => {
         cardCode: userData.U_CARD_CODE,
         item_code: itemSKU,
         amountToBy: newQuantity,
+        status: "UPDATE",
       });
 
       showPopup("הפריט עודכן בהצלחה!");
@@ -367,6 +372,9 @@ const CartScreen = ({ navigation, route }) => {
       </View>
     );
   };
+  console.log("====================================");
+  console.log("isEmpty: " + isEmpty);
+  console.log("====================================");
 
   return (
     <>
@@ -449,7 +457,11 @@ const CartScreen = ({ navigation, route }) => {
                     top: 20,
                   }}
                 >
-                  <Button title="המשך לקופה" onPress={hendelOnClick} />
+                  <Button
+                    title="המשך לקופה"
+                    onPress={hendelOnClick}
+                    enable={!isEmpty}
+                  />
                 </View>
               </View>
             </>

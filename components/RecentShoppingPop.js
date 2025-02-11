@@ -103,10 +103,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 5, // For Android shadow
+    zIndex: 2,
     maxHeight: height * 0.6,
   },
   closeButton: {
     alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", // Aligns close button to the top-left corner
+    zIndex: 3,
     marginBottom: 10,
   },
   header: {

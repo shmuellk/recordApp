@@ -9,6 +9,7 @@ import MenuScreen from "./screens/MenuScreen";
 import FavoritsScreen from "./screens/FavoritsScreen";
 import ArmorScreen from "./screens/ArmorScreen"; // Adjust the path as necessary
 import ContactScreen from "./screens/ContactScreen";
+import PaymentScreen from "./screens/PaymentScreen";
 import { I18nManager } from "react-native"; // Import I18nManager
 
 // Keep the splash screen visible while the app is loading
@@ -54,6 +55,7 @@ export default function App() {
         <Stack.Screen name="ArmorScreen" component={ArmorScreen} />
         <Stack.Screen name="ContactScreen" component={ContactScreen} />
         <Stack.Screen name="MenuScreen" component={MenuScreen} />
+        <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

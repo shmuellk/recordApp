@@ -90,12 +90,19 @@ const getCarsByItem = async (data) => {
 const getAlternativeSkus = async (data) => {
   try {
     const CATALOG_NUMBER = data.CATALOG_NUMBER ? data.CATALOG_NUMBER : "";
-
+    console.log("====================================");
+    console.log("CATALOG_NUMBER : " + CATALOG_NUMBER);
+    console.log("====================================");
     let response = await axios.get(`${IP}/itemCard/getAlternativeSkus/`, {
       params: {
         CATALOG_NUMBER,
       },
     });
+    console.log("====================================");
+    console.log(
+      "response.data.result : " + JSON.stringify(response.data.result)
+    );
+    console.log("====================================");
 
     if (response.status === 200) {
       const result = response.data.result;
@@ -123,7 +130,7 @@ const getRecentShopping = async (data) => {
   try {
     const CATALOG_NUMBER = data.CATALOG_NUMBER ? data.CATALOG_NUMBER : "";
     let response = await axios.get(
-      `http://app.record.a-zuzit.co.il:8085/cars/serch`,
+      `http://app.record.a-zuzit.co.il:8085/cars/serch/`,
       {
         params: {
           CATALOG_NUMBER,

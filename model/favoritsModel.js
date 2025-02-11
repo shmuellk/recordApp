@@ -31,13 +31,6 @@ const addItemToFavorits = async (data) => {
   const item_code = data.item_code ? data.item_code : "";
   const status = data.status ? data.status : 0;
 
-  console.log("====================================");
-  console.log("userName : " + userName);
-  console.log("cardCode : " + cardCode);
-  console.log("item_code : " + item_code);
-  console.log("status : " + status);
-  console.log("====================================");
-
   try {
     const response = await axios.get(`${IP}/favorits/addItemToFavorits`, {
       params: {

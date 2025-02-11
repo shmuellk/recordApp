@@ -11,6 +11,8 @@ import {
   TextInput,
   Easing,
   Animated,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import Button from "../components/Button";
@@ -111,6 +113,7 @@ const ItemCardScreen = ({ route, navigation }) => {
         cardCode: userData.U_CARD_CODE,
         item_code: infoByBrand.catalog_number,
         amountToBy: amountToBy,
+        status: "ADD",
       });
       showPopup("הפריט נוסף לעגלה!");
     } catch (e) {
@@ -121,7 +124,11 @@ const ItemCardScreen = ({ route, navigation }) => {
   };
 
   const handleQuantityChange = (text) => {
-    setAmountToBy(text);
+    if (!text || !text.length) {
+      setAmountToBy(1);
+    } else {
+      setAmountToBy(parseInt(text, 10));
+    }
   };
 
   const handleArmorToggle = async () => {
@@ -134,7 +141,7 @@ const ItemCardScreen = ({ route, navigation }) => {
         item_code: infoByBrand.catalog_number,
         status: "ADD",
       });
-      showPopup("הפריט נוסף למועדפים!");
+      showPopup("הפריט נוסף לשריונים!");
     } catch (error) {
       console.log("Error adding item to armor:", error);
     }
@@ -209,218 +216,237 @@ const ItemCardScreen = ({ route, navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
-      <SuccessPopup
-        text={currentPopup?.text || ""}
-        visible={!!currentPopup} // אם currentPopup קיים, נציג
-        onDismiss={handlePopupDismiss}
-        color={currentPopup?.color || "#28A745"}
-      />
-      <View style={styles.imageScrollerView}>
-        <TouchableOpacity
-          style={styles.rightButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Image source={require("../assets/Back.png")} />
-        </TouchableOpacity>
-        <Image
-          style={styles.image}
-          source={{
-            uri: `http://app.record.a-zuzit.co.il:8085/media/${item.IMAGE}.jpg?timestamp=${timestamp}`,
-          }}
-          onError={(error) =>
-            console.log("Image Load Error in: ", error.nativeEvent.error)
-          }
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <SuccessPopup
+          text={currentPopup?.text || ""}
+          visible={!!currentPopup} // אם currentPopup קיים, נציג
+          onDismiss={handlePopupDismiss}
+          color={currentPopup?.color || "#28A745"}
         />
-      </View>
+        <View style={styles.imageScrollerView}>
+          <TouchableOpacity
+            style={styles.rightButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Image source={require("../assets/Back.png")} />
+          </TouchableOpacity>
+          <Image
+            style={styles.image}
+            source={{
+              uri: `http://app.record.a-zuzit.co.il:8085/media/${item.IMAGE}.jpg?timestamp=${timestamp}`,
+            }}
+            onError={(error) =>
+              console.log("Image Load Error in: ", error.nativeEvent.error)
+            }
+          />
+        </View>
 
-      <View
-        style={{
-          height: 40,
-          backgroundColor: "rgba(235, 237, 245, 0.4)",
-          position: "absolute",
-          zIndex: 99999,
-          borderRadius: 10,
-          justifyContent: "center",
-          alignItems: "center",
-          alignContent: "center",
-          alignSelf: "center",
-          top: height * 0.04,
-        }}
-      >
-        {infoByBrand.teeth && (
-          <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
-            {infoByBrand.teeth}
-          </Text>
-        )}
-        {infoByBrand.size && (
-          <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
-            {infoByBrand.size}
-          </Text>
-        )}
-      </View>
-
-      {/* Product Information with Star Icon on the left and Product Title on the right */}
-      <View style={styles.ItemInfoVeiw}>
-        {item ? (
-          <View style={styles.itemDetails}>
-            <View style={styles.productTitleContainer}>
-              {/* Star Icon (on the far left) */}
-              <TouchableOpacity
-                onPress={handleStarToggle}
-                style={{ position: "relative" }}
-              >
-                <View style={{ width: 26, height: 26 }}>
-                  {/* כוכב אדום - יופיע כשהערך 1 */}
-                  <Animated.Image
-                    style={[
-                      styles.starIcon,
-                      {
-                        position: "absolute",
-                        opacity: starAnim, // 0 -> מוסתר, 1 -> גלוי
-                      },
-                    ]}
-                    source={require("../assets/icons/itemCard/RedStar.png")}
-                  />
-                  {/* כוכב אפור - הפוך מהערך של starAnim (1-starAnim) */}
-                  <Animated.Image
-                    style={[
-                      styles.starIcon,
-                      {
-                        position: "absolute",
-                        opacity: starAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [1, 0],
-                        }),
-                      },
-                    ]}
-                    source={require("../assets/icons/itemCard/GreyStar.png")}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {/* Product Title (right-aligned) */}
-              <Text style={styles.productTitle}>
-                {item.CHILD_GROUP + " " + item.DESCRIPTION_NOTE}
-              </Text>
-            </View>
-
-            {/* SKU and Brand Info */}
-            <Text style={styles.skuText}>
-              מק"ט: {infoByBrand.catalog_number}
+        <View
+          style={{
+            height: 40,
+            backgroundColor: "rgba(235, 237, 245, 0.4)",
+            position: "absolute",
+            zIndex: 99999,
+            borderRadius: 10,
+            justifyContent: "center",
+            alignItems: "center",
+            alignContent: "center",
+            alignSelf: "center",
+            top: height * 0.04,
+          }}
+        >
+          {infoByBrand.teeth && (
+            <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+              {infoByBrand.teeth}
             </Text>
-            <Text style={styles.brandText}>מותג: {infoByBrand.brand}</Text>
-            {/* Price Section */}
-            <View
-              style={{
-                flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
-              }}
-            >
-              {/* Show Gross Price if showGross === true */}
-              {showGross && (
-                <Text style={styles.priceText}>
-                  מחיר ברוטו:{" "}
-                  <Text style={styles.priceValue}>
-                    ₪ {finalGross.toFixed(2)}
-                  </Text>
-                </Text>
-              )}
-
-              {/* Show Net Price if showNet === true */}
-              {showNet && (
-                <Text style={styles.priceText}>
-                  מחיר נטו:{" "}
-                  <Text style={styles.priceValue}>₪ {finalNet.toFixed(2)}</Text>
-                </Text>
-              )}
-            </View>
-          </View>
-        ) : (
-          <Text>No item data available</Text>
-        )}
-      </View>
-
-      <View style={styles.ItemBrandVeiw}>
-        <View style={styles.amountView}>
-          {inStock ? (
-            <View style={styles.orderQuantity}>
-              <TouchableOpacity onPress={decrement} style={styles.button}>
-                <Image
-                  style={styles.buttonText}
-                  source={require("../assets/icons/itemCard/Minus.png")}
-                />
-              </TouchableOpacity>
-
-              <TextInput
-                style={styles.quantityInput}
-                value={amountToBy.toString()}
-                onChangeText={(text) => handleQuantityChange(text)}
-                keyboardType="numeric"
-                selectTextOnFocus={true}
-              />
-
-              <TouchableOpacity onPress={increment} style={styles.button}>
-                <Image
-                  style={styles.buttonText}
-                  source={require("../assets/icons/itemCard/Plus.png")}
-                />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.armor}>
-              <Text style={styles.inventoryText}>אזל מהמלאי</Text>
-              <TouchableOpacity
-                onPress={handleArmorToggle}
-                style={{
-                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                  alignContent: "center",
-                }}
-              >
-                <Text style={styles.armorText}>שריין פריט זה</Text>
-                <Image
-                  style={{ top: 3 }}
-                  source={
-                    armor
-                      ? require("../assets/icons/itemCard/RedReserve.png")
-                      : require("../assets/icons/itemCard/GreyReserve.png")
-                  }
-                />
-              </TouchableOpacity>
-            </View>
+          )}
+          {infoByBrand.size && (
+            <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+              {infoByBrand.size}
+            </Text>
           )}
         </View>
-        <View style={styles.brandView}>
-          <FlatList
-            data={Brand}
-            renderItem={renderItem}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal={true} // Enable horizontal scrolling
-            inverted={I18nManager.isRTL ? true : false}
-            showsHorizontalScrollIndicator={false} // Optional: Hide the scroll indicator
-          />
+
+        {/* Product Information with Star Icon on the left and Product Title on the right */}
+        <View style={styles.ItemInfoVeiw}>
+          {item ? (
+            <View style={styles.itemDetails}>
+              <View style={styles.productTitleContainer}>
+                {/* Star Icon (on the far left) */}
+                <TouchableOpacity
+                  onPress={handleStarToggle}
+                  style={{ position: "relative" }}
+                >
+                  <View style={{ width: 26, height: 26 }}>
+                    {/* כוכב אדום - יופיע כשהערך 1 */}
+                    <Animated.Image
+                      style={[
+                        styles.starIcon,
+                        {
+                          position: "absolute",
+                          opacity: starAnim, // 0 -> מוסתר, 1 -> גלוי
+                        },
+                      ]}
+                      source={require("../assets/icons/itemCard/RedStar.png")}
+                    />
+                    {/* כוכב אפור - הפוך מהערך של starAnim (1-starAnim) */}
+                    <Animated.Image
+                      style={[
+                        styles.starIcon,
+                        {
+                          position: "absolute",
+                          opacity: starAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 0],
+                          }),
+                        },
+                      ]}
+                      source={require("../assets/icons/itemCard/GreyStar.png")}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Product Title (right-aligned) */}
+                <Text style={styles.productTitle}>
+                  {item.CHILD_GROUP + " " + item.DESCRIPTION_NOTE}
+                </Text>
+              </View>
+
+              {/* SKU and Brand Info */}
+              <Text style={styles.skuText}>
+                מק"ט: {infoByBrand.catalog_number}
+              </Text>
+              <Text style={styles.brandText}>מותג: {infoByBrand.brand}</Text>
+              {/* Price Section */}
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
+                }}
+              >
+                {/* Show Gross Price if showGross === true */}
+                {showGross && (
+                  <Text style={styles.priceText}>
+                    מחיר ברוטו:{" "}
+                    <Text style={styles.priceValue}>
+                      ₪ {finalGross.toFixed(2)}
+                    </Text>
+                  </Text>
+                )}
+
+                {/* Show Net Price if showNet === true */}
+                {showNet && (
+                  <Text style={styles.priceText}>
+                    מחיר נטו:{" "}
+                    <Text style={styles.priceValue}>
+                      ₪ {finalNet.toFixed(2)}
+                    </Text>
+                  </Text>
+                )}
+              </View>
+            </View>
+          ) : (
+            <Text>No item data available</Text>
+          )}
+        </View>
+
+        <View style={styles.ItemBrandVeiw}>
+          <View style={styles.amountView}>
+            {inStock ? (
+              <View style={styles.orderQuantity}>
+                <TouchableOpacity onPress={decrement} style={styles.button}>
+                  <Image
+                    style={styles.buttonText}
+                    source={require("../assets/icons/itemCard/Minus.png")}
+                  />
+                </TouchableOpacity>
+
+                <TextInput
+                  style={styles.quantityInput}
+                  value={amountToBy.toString()}
+                  onChangeText={(text) => handleQuantityChange(text, item.id)}
+                  keyboardType="numeric"
+                  selectTextOnFocus={true}
+                />
+
+                <TouchableOpacity onPress={increment} style={styles.button}>
+                  <Image
+                    style={styles.buttonText}
+                    source={require("../assets/icons/itemCard/Plus.png")}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.armor}>
+                <Text style={styles.inventoryText}>אזל מהמלאי</Text>
+                <TouchableOpacity
+                  onPress={handleArmorToggle}
+                  style={{
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                    alignContent: "center",
+                  }}
+                >
+                  <Text style={styles.armorText}>שריין פריט זה</Text>
+                  <Image
+                    style={{ top: 3 }}
+                    source={
+                      armor
+                        ? require("../assets/icons/itemCard/RedReserve.png")
+                        : require("../assets/icons/itemCard/GreyReserve.png")
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <View style={styles.brandView}>
+            <FlatList
+              data={Brand}
+              renderItem={renderItem}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal={true} // Enable horizontal scrolling
+              inverted={I18nManager.isRTL ? true : false}
+              showsHorizontalScrollIndicator={false} // Optional: Hide the scroll indicator
+            />
+          </View>
+        </View>
+
+        <View style={styles.verticalSeparator} />
+
+        <View style={styles.buttonsView}>
+          <View style={styles.PopUpView}>
+            <InfoButton
+              placeholder={"קניות אחרונות"}
+              type={1}
+              car={item}
+              catalog_number={infoByBrand.catalog_number}
+            />
+            <InfoButton
+              placeholder={"רכבים"}
+              type={2}
+              car={item}
+              catalog_number={infoByBrand.catalog_number}
+            />
+            <InfoButton
+              placeholder={"מק''ט חלופי"}
+              type={3}
+              car={item}
+              catalog_number={infoByBrand.catalog_number}
+            />
+          </View>
+
+          <View style={styles.AddCartButtonView}>
+            <Button
+              title={"הוסף לעגלה"}
+              onPress={addToCart}
+              loading={searchLoading}
+              enable={inStock}
+            />
+          </View>
         </View>
       </View>
-
-      <View style={styles.verticalSeparator} />
-
-      <View style={styles.buttonsView}>
-        <View style={styles.PopUpView}>
-          <InfoButton placeholder={"קניות אחרונות"} type={1} car={item} />
-          <InfoButton placeholder={"רכבים"} type={2} car={item} />
-          <InfoButton placeholder={"מק''ט חלופי"} type={3} car={item} />
-        </View>
-
-        <View style={styles.AddCartButtonView}>
-          <Button
-            title={"הוסף לעגלה"}
-            onPress={addToCart}
-            loading={searchLoading}
-            enable={inStock}
-          />
-        </View>
-      </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -588,11 +614,15 @@ const styles = StyleSheet.create({
   },
   rightButton: {
     position: "absolute",
-    left: I18nManager.isRTL ? 20 : 0,
-    right: I18nManager.isRTL ? 0 : 20,
-    top: 55, // Adjusted to be within the header
+    top: 55, // או כל ערך שמתאים למיקום הרצוי
+    left: I18nManager.isRTL ? 20 : 20, // אם אתם רוצים למקם את האייקון משני הצדדים, אפשר להשתמש בתנאי
     zIndex: 1,
+    width: 40, // קבעו רוחב לפי גודל האייקון
+    height: 40, // קבעו גובה לפי גודל האייקון
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   quantityInput: {
     width: 50, // Adjust width to balance between buttons
     height: 30, // Reduce height for better fit within the container
