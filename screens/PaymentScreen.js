@@ -10,6 +10,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
@@ -41,6 +44,10 @@ const PaymentScreen = ({ navigation, route }) => {
     setPopupsQueue((prevQueue) => prevQueue.slice(1));
     setCurrentPopup(null);
   };
+
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
   return (
     <>
       <SuccessPopup
@@ -49,128 +56,134 @@ const PaymentScreen = ({ navigation, route }) => {
         onDismiss={handlePopupDismiss}
         color={currentPopup?.color || "#28A745"}
       />
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            <View style={styles.hader}>
+              <TouchableOpacity
+                style={styles.rightButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Image source={require("../assets/Back.png")} />
+              </TouchableOpacity>
+              <View style={styles.titleWrapper}>
+                <Text style={styles.headerText}>קופה</Text>
+              </View>
+            </View>
+            <View style={styles.ItemsSeparator} />
+            <View style={styles.priceView}>
+              <Text style={styles.priceHeader}>סיכום הזמנה</Text>
+              <View style={styles.priceTextView}>
+                <View style={styles.priceTextLine}>
+                  <Text style={styles.priceText}>שווי ההזמנה :</Text>
+                  <Text style={styles.priceText}> {totalPrice}</Text>
+                </View>
+                <View style={styles.priceTextLine}>
+                  <Text style={styles.priceText}>מע"מ 18%:</Text>
+                  <Text style={styles.priceText}>{formattedMaam}</Text>
+                </View>
+                <View
+                  style={{
+                    height: 1.5,
+                    width: "100%",
+                    alignSelf: "center",
+                    backgroundColor: "#EBEDF5",
+                  }}
+                />
+                <View style={styles.priceTextLine}>
+                  <Text style={[styles.priceText, { fontWeight: "bold" }]}>
+                    סה"כ לתשלום:
+                  </Text>
+                  <Text style={[styles.priceText, { fontWeight: "bold" }]}>
+                    {formattedTotalWithMaam}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.order}>
+              <View style={[styles.userDataView, { marginTop: 15 }]}>
+                <Text style={styles.userDataHeader}>שם המזמין</Text>
+                <TextInput
+                  placeholder="שם המזמין"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
 
-      <View style={styles.container}>
-        <View style={styles.hader}>
-          <TouchableOpacity
-            style={styles.rightButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Image source={require("../assets/Back.png")} />
-          </TouchableOpacity>
-          <View style={styles.titleWrapper}>
-            <Text style={styles.headerText}>קופה</Text>
-          </View>
-        </View>
-        <View style={styles.ItemsSeparator} />
-        <View style={styles.priceView}>
-          <Text style={styles.priceHeader}>סיכום הזמנה</Text>
-          <View style={styles.priceTextView}>
-            <View style={styles.priceTextLine}>
-              <Text style={styles.priceText}>שווי ההזמנה :</Text>
-              <Text style={styles.priceText}> {totalPrice}</Text>
-            </View>
-            <View style={styles.priceTextLine}>
-              <Text style={styles.priceText}>מע"מ 18%:</Text>
-              <Text style={styles.priceText}>{formattedMaam}</Text>
-            </View>
-            <View
-              style={{
-                height: 1.5,
-                width: "100%",
-                alignSelf: "center",
-                backgroundColor: "#EBEDF5",
-              }}
-            />
-            <View style={styles.priceTextLine}>
-              <Text style={[styles.priceText, { fontWeight: "bold" }]}>
-                סה"כ לתשלום:
-              </Text>
-              <Text style={[styles.priceText, { fontWeight: "bold" }]}>
-                {formattedTotalWithMaam}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.order}>
-          <View style={[styles.userDataView, { marginTop: 15 }]}>
-            <Text style={styles.userDataHeader}>שם המזמין</Text>
-            <TextInput
-              placeholder="שם המזמין"
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
+              <View style={styles.userDataView}>
+                <Text style={styles.userDataHeader}>טלפון</Text>
+                <TextInput
+                  placeholder="טלפון"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
 
-          <View style={styles.userDataView}>
-            <Text style={styles.userDataHeader}>טלפון</Text>
-            <TextInput
-              placeholder="טלפון"
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-
-          <View style={styles.userDataView}>
-            <Text style={styles.userDataHeader}>אופן השילוח</Text>
-            <Filter
-              placeholder="יצרן"
-              currentValue={"אמיר הובלות"}
-              data={["אמיר הובלות", "שמשון הובלות", "נמזי"]} // Pass dynamic data here
-              enable={true}
-              // loading={loadingFilters.MANUFACTURER} // Pass loading state
-              onSelectItem={(value) => {
-                enableFilter("MODEL");
-                saveSelect("MANUFACTURER", value);
-                saveSelect("MODEL", "");
-              }}
-            />
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between", // Added to create space between the texts
-              width: "90%", // Ensure the view has enough width to create the space
-              alignSelf: "center", // Centering the container for better alignment
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ color: "red", fontWeight: "bold" }}>
-              זמן יציאת משלוח משוער:
-            </Text>
-            <View style={{ flexDirection: "row" }}>
-              <Text style={{ color: "red" }}>20/08/2024</Text>
-              <Text style={{ color: "red" }}> | </Text>
-              <Text style={{ color: "red" }}>11:30</Text>
+              <View style={styles.userDataView}>
+                <Text style={styles.userDataHeader}>אופן השילוח</Text>
+                <Filter
+                  placeholder="יצרן"
+                  currentValue={"אמיר הובלות"}
+                  data={["אמיר הובלות", "שמשון הובלות", "נמזי"]} // Pass dynamic data here
+                  enable={true}
+                  // loading={loadingFilters.MANUFACTURER} // Pass loading state
+                  onSelectItem={(value) => {
+                    enableFilter("MODEL");
+                    saveSelect("MANUFACTURER", value);
+                    saveSelect("MODEL", "");
+                  }}
+                />
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between", // Added to create space between the texts
+                  width: "90%", // Ensure the view has enough width to create the space
+                  alignSelf: "center", // Centering the container for better alignment
+                  marginBottom: 10,
+                }}
+              >
+                <Text style={{ color: "red", fontWeight: "bold" }}>
+                  זמן יציאת משלוח משוער:
+                </Text>
+                <View style={{ flexDirection: "row" }}>
+                  <Text style={{ color: "red" }}>20/08/2024</Text>
+                  <Text style={{ color: "red" }}> | </Text>
+                  <Text style={{ color: "red" }}>11:30</Text>
+                </View>
+              </View>
+              <View style={styles.userDataView}>
+                <Text style={styles.userDataHeader}>הערות</Text>
+                <TextInput
+                  placeholder="הערות"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+              <View style={{ paddingHorizontal: 15 }}>
+                <Text style={{ fontSize: 12 }}>
+                  * ייתבנו שינויים בזמני יציאת המשלוח אשר לא בהכרח תלויים בנו.
+                  אנו ניצור איתכם קשר במידה וישנם שינויים. אם ברצונכם לשנות את
+                  זמני המשלוח באופן ידני ציינו זאת בשדה "הערות"
+                </Text>
+              </View>
+              <View style={{ padding: 15 }}>
+                <Button
+                  title="בצע הזמנה"
+                  onPress={hendelOnClick}
+                  enable={!isEmpty}
+                />
+              </View>
             </View>
           </View>
-          <View style={styles.userDataView}>
-            <Text style={styles.userDataHeader}>הערות</Text>
-            <TextInput
-              placeholder="הערות"
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-          <View style={{ paddingHorizontal: 15 }}>
-            <Text style={{ fontSize: 12 }}>
-              * ייתבנו שינויים בזמני יציאת המשלוח אשר לא בהכרח תלויים בנו. אנו
-              ניצור איתכם קשר במידה וישנם שינויים. אם ברצונכם לשנות את זמני
-              המשלוח באופן ידני ציינו זאת בשדה "הערות"
-            </Text>
-          </View>
-          <View style={{ padding: 15 }}>
-            <Button
-              title="בצע הזמנה"
-              onPress={hendelOnClick}
-              enable={!isEmpty}
-            />
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </>
   );
 };
@@ -193,10 +206,10 @@ const styles = StyleSheet.create({
     flex: 2.5,
   },
   priceHeader: {
-    fontSize: 20,
+    fontSize: height * 0.028,
     fontWeight: "bold",
     color: "#1A2540",
-    padding: 10,
+    padding: height * 0.02,
   },
   priceTextView: {
     width: width * 0.9,
@@ -204,15 +217,16 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     borderWidth: 2, // Set the border width
     borderColor: "#EBEDF5", // Set the border color to black
-    padding: 15,
+    padding: height * 0.013,
+    marginBottom: 10,
   },
   priceTextLine: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 5,
+    marginVertical: height * 0.007,
   },
   priceText: {
-    fontSize: 18,
+    fontSize: height * 0.022,
     color: "#1A2540",
   },
   order: {
@@ -224,17 +238,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 60,
   },
   userDataView: {
-    marginBottom: 10,
+    marginBottom: 5,
   },
   userDataHeader: {
-    fontSize: 16,
+    fontSize: height * 0.02,
     color: "#1A2540",
     marginLeft: width * 0.1,
     marginBottom: 5,
   },
   input: {
     borderRadius: 15,
-    padding: 10,
+    padding: height * 0.01,
     textAlign: "right",
     width: width * 0.85,
     alignSelf: "center",
@@ -255,6 +269,7 @@ const styles = StyleSheet.create({
   titleWrapper: {
     flex: 1,
     justifyContent: "flex-end",
+    height: height * 0.13,
   },
   headerText: {
     fontSize: 30,
@@ -262,8 +277,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#1A2540",
     bottom: height * 0.01,
-  },
-  Data: {
-    flex: 8.7,
   },
 });
