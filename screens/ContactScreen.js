@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Linking,
   FlatList,
+  I18nManager,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Icon2 from "react-native-vector-icons/AntDesign";
@@ -16,7 +17,17 @@ import usersModel from "../model/usersModel";
 
 const { width, height } = Dimensions.get("window");
 
-// פונקציה לחלוקת מערך ל-chunks (קבוצות) בגודל מוגדר (במקרה שלנו - 3 פריטים)
+// Base dimensions from your design (adjust these as needed)
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Helper scaling functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
+
+// Function to split data into chunks of a fixed size (3 items per chunk)
 const chunkData = (data, chunkSize) => {
   const chunks = [];
   for (let i = 0; i < data.length; i += chunkSize) {
@@ -36,13 +47,13 @@ const ContactScreen = ({ navigation }) => {
     fetchWhatsappData();
   }, []);
 
-  // פונקציה להצגת משתמש בודד – היא תציג את האייקון ושם המשתמש
+  // Render a single WhatsApp user (icon and name)
   const renderWhatsappUser = (item) => {
     return (
       <TouchableOpacity onPress={() => openPhoneCall(`${item.phone}`)}>
         <View style={styles.addresViewText}>
           <View style={styles.iconContainer}>
-            <Icon2 name="phone" size={28} color="#d01117" />
+            <Icon2 name="phone" size={scale(28)} color="#d01117" />
           </View>
           <Text style={styles.addresText}>{item.name}</Text>
         </View>
@@ -50,7 +61,7 @@ const ContactScreen = ({ navigation }) => {
     );
   };
 
-  // פונקציה לפתיחת WhatsApp עם מספר הטלפון המבוקש
+  // Opens the phone dialer
   const openPhoneCall = async (phoneNumber) => {
     const url = `tel:${phoneNumber}`;
     try {
@@ -91,7 +102,7 @@ const ContactScreen = ({ navigation }) => {
     }
   };
 
-  // חלוקת הנתונים לעמודות: בכל עמודה עד 3 פריטים
+  // Split the WhatsApp data into columns (each column contains up to 3 items)
   const columns = chunkData(whatsappData, 3);
 
   return (
@@ -122,7 +133,7 @@ const ContactScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Other sections */}
+      {/* Address Section */}
       <View style={styles.addresView}>
         <View style={styles.addresHader}>
           <Text style={styles.addresHaderText}>
@@ -132,7 +143,7 @@ const ContactScreen = ({ navigation }) => {
         <TouchableOpacity onPress={handleOpenWaze}>
           <View style={styles.addresViewText}>
             <View style={styles.iconContainer}>
-              <Icon2 name="enviromento" size={28} color="#d01117" />
+              <Icon2 name="enviromento" size={scale(28)} color="#d01117" />
             </View>
             <Text style={styles.addresText}>הסדן 7, חולון 5881560</Text>
           </View>
@@ -141,8 +152,7 @@ const ContactScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => openPhoneCall("03-6391469")}>
           <View style={styles.addresViewText}>
             <View style={styles.iconContainer}>
-              {/* עדכנו את האייקון לאייקון טלפון */}
-              <Icon2 name="phone" size={30} color="#d01117" />
+              <Icon2 name="phone" size={scale(30)} color="#d01117" />
             </View>
             <Text style={styles.addresText}>03-6391469</Text>
           </View>
@@ -150,25 +160,24 @@ const ContactScreen = ({ navigation }) => {
         <TouchableOpacity onPress={handleOpenMail}>
           <View style={styles.addresViewText}>
             <View style={styles.iconContainer}>
-              <Icon3 name="alternate-email" size={28} color="#d01117" />
+              <Icon3 name="alternate-email" size={scale(28)} color="#d01117" />
             </View>
             <Text style={styles.addresText}>info@record.co.il</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.addresViewText}>
           <View style={styles.iconContainer}>
-            <Icon2 name="mail" size={28} color="#d01117" />
+            <Icon2 name="mail" size={scale(28)} color="#d01117" />
           </View>
           <Text style={styles.addresText}>ת.ד 37207 תל אביב 66188</Text>
         </View>
       </View>
       <View style={styles.ItemsSeparator} />
 
-      {/* FlatList אופקי המציג עמודות כאשר בכל עמודה עד 3 פריטים */}
+      {/* Horizontal FlatList displaying columns (each column contains up to 3 items) */}
       <View style={styles.phonsNumView}>
         <FlatList
-          // key={`flatlist_${columns.length}`}
-          data={columns} // מערך העמודות
+          data={columns}
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(_, index) => index.toString()}
@@ -198,27 +207,27 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   ItemsSeparator: {
-    height: 1.5,
+    height: verticalScale(1.5),
     width: width * 0.9,
     alignSelf: "center",
     backgroundColor: "#EBEDF5",
   },
   logoView: {
-    flex: 3,
+    flex: 2.5,
     backgroundColor: "#1A2540",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: scale(30),
+    borderBottomRightRadius: scale(30),
   },
   hader: {
     flexDirection: "row-reverse",
-    paddingVertical: 20,
     alignItems: "center",
     justifyContent: "center",
-    top: 50,
+    top: verticalScale(35),
   },
   rightButton: {
     position: "absolute",
-    right: 20,
+    right: I18nManager.isRTL ? scale(20) : null,
+    left: I18nManager.isRTL ? null : scale(20),
     zIndex: 1,
   },
   titleWrapper: {
@@ -227,13 +236,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerText: {
-    fontSize: 30,
+    fontSize: moderateScale(30),
     fontWeight: "bold",
     color: "white",
   },
+  iconImage: {
+    width: scale(30),
+    height: scale(30),
+    resizeMode: "contain",
+  },
   logoWrapper: {
     position: "absolute",
-    top: 30,
+    // top: verticalScale(30),
     left: 0,
     right: 0,
     justifyContent: "center",
@@ -247,41 +261,41 @@ const styles = StyleSheet.create({
   addresView: {
     flex: 4.5,
     backgroundColor: "white",
-    alignItems: "flex-start",
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
   addresHader: {
-    paddingVertical: 30,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(15),
+    marginBottom: verticalScale(10),
   },
   addresHaderText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "bold",
   },
   addresViewText: {
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(10),
   },
   addresText: {
-    marginLeft: 10,
-    fontSize: 16,
+    marginLeft: I18nManager.isRTL ? scale(10) : null,
+    marginRight: I18nManager.isRTL ? null : scale(10),
+    fontSize: moderateScale(16),
   },
   iconContainer: {
     backgroundColor: "#EBEDF5",
-    padding: 5,
-    borderRadius: 10,
+    padding: scale(3),
+    borderRadius: scale(10),
   },
-  // עיצוב עבור כל עמודה (טור) ב-FlatList האופקי
+  // Styles for the horizontal FlatList columns
   column: {
     justifyContent: "flex-start",
   },
-
-  // עיצוב המונע הצגת גלילה אופקית מיותרת
+  // Prevent extra horizontal scrolling
   phonsNumView: {
     flex: 2.5,
     justifyContent: "center",
-    alignItems: "flex-start",
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
 });

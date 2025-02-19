@@ -15,6 +15,9 @@ import {
 const { width, height } = Dimensions.get("window");
 
 const PopUp = ({ data, onClose, title, subTitle }) => {
+  console.log("====================================");
+  console.log("data last update: " + JSON.stringify(data));
+  console.log("====================================");
   return (
     <View style={styles.modalOverlay}>
       {/* Close the modal when touching outside the popup */}
@@ -29,8 +32,11 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
           <Image source={require("../assets/icons/searchIcons/Close.png")} />
         </TouchableOpacity>
         <Text style={styles.header}>
-          {title} : {subTitle}
+          {I18nManager.isRTL
+            ? `${title} : ${subTitle}`
+            : `${subTitle} : ${title}`}
         </Text>
+
         {/* <Text style={styles.header}>{subTitle}</Text> */}
 
         {data[0] && (
@@ -49,12 +55,34 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <View style={styles.tableRow}>
-                <Text style={styles.tableCell}>
+                <Text
+                  style={styles.tableCell}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   {item.DOCDATE ? item.DOCDATE.split("T")[0] : ""}
                 </Text>
-                <Text style={styles.tableCell}>{item.QUANTITY}</Text>
-                <Text style={styles.tableCell}>{item.BRUTODOCTOTAL}</Text>
-                <Text style={styles.tableCell}>{item.NETDOCTOTAL}</Text>
+                <Text
+                  style={styles.tableCell}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {item.QUANTITY}
+                </Text>
+                <Text
+                  style={styles.tableCell}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {item.PRICEBEFDI}
+                </Text>
+                <Text
+                  style={styles.tableCell}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {item.NETPRICE}
+                </Text>
               </View>
             )}
           />
@@ -115,8 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 5,
-    bottom: 30,
+    paddingBottom: 15,
     color: "#1A2540",
   },
   searchInput: {
@@ -190,5 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     fontSize: 18,
+    paddingHorizontal: 5, // מעט שוליים כדי למנוע חיתוך
+    minWidth: 0, // מאפשר גמישות ברוחב
   },
 });

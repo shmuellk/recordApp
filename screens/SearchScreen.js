@@ -96,6 +96,15 @@ const SearchScreen = ({ navigation, route }) => {
     fetchManufacturers();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      setCarNumber("");
+      setSendCarNumber("");
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const [filtersEnabled, setFiltersEnabled] = useState({
     MANUFACTURER: true,
     MODEL: false,

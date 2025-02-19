@@ -8,6 +8,7 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  I18nManager,
 } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
 import CalendarPop from "../components/calenderPopup";
@@ -97,23 +98,46 @@ const TrackScreen = ({ navigation, route }) => {
 
   const renderItem = ({ item, index }) => (
     <TouchableOpacity
-      style={{ flexDirection: "row", height: height * 0.11 }}
+      style={{
+        flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+        height: height * 0.11,
+      }}
       onPress={() => handleItemPress(item.DOCNUM)}
     >
-      <View style={{ flexDirection: "row", flex: 7.5 }}>
+      <View
+        style={{
+          flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+          flex: 7.5,
+        }}
+      >
         <View style={{ padding: 10 }}>
-          <Text style={styles.itemHader}>מ'ס חשבונית : </Text>
+          <Text style={styles.itemHader}>מס' חשבונית : </Text>
           <Text style={styles.itemInfo}>אופן שילוח : </Text>
           <Text style={styles.itemInfo}>סטטוס : </Text>
         </View>
         <View style={{ padding: 10 }}>
-          <Text style={[styles.itemHader, { textAlign: "left" }]}>
+          <Text
+            style={[
+              styles.itemHader,
+              { textAlign: I18nManager.isRTL ? "left" : "right" },
+            ]}
+          >
             {item.DOCNUM}
           </Text>
-          <Text style={[styles.itemInfo, { textAlign: "left" }]}>
+          <Text
+            style={[
+              styles.itemInfo,
+              { textAlign: I18nManager.isRTL ? "left" : "right" },
+            ]}
+          >
             {item.U_REC_SHIPTYPE}
           </Text>
-          <Text style={[styles.itemInfo, { textAlign: "left" }]}>
+          <Text
+            style={[
+              styles.itemInfo,
+              { textAlign: I18nManager.isRTL ? "left" : "right" },
+            ]}
+          >
             {item.DELIVERY_STATUS}
           </Text>
         </View>
@@ -155,7 +179,7 @@ const TrackScreen = ({ navigation, route }) => {
           <View
             style={{
               flex: 1.5,
-              flexDirection: "row",
+              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
               justifyContent: "space-between",
               alignItems: "center",
               borderWidth: 1,
@@ -218,7 +242,8 @@ const TrackScreen = ({ navigation, route }) => {
           <View
             style={{
               flex: 0.6,
-              flexDirection: "row",
+              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+              width: width,
             }}
           >
             <TouchableOpacity
@@ -373,7 +398,7 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 15,
     marginHorizontal: 10,
-    width: 120,
+    width: width * 0.28,
   },
   selectedButton: {
     backgroundColor: "#ED2027", // Red color when selected

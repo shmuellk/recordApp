@@ -84,33 +84,38 @@ const ItemScreen = ({ navigation, route }) => {
   const MainCategory = category
     .filter(
       (item, index, self) =>
-        index === self.findIndex((t) => t.PARENT_GROUP === item.PARENT_GROUP) // Ensure uniqueness
+        index === self.findIndex((t) => t.PARENT_GROUP === item.PARENT_GROUP)
     )
     .map((item, index) => ({
       id: index + 1,
       name: item.PARENT_GROUP,
-    }));
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
 
   const SubCategory = category
     .filter(
       (item, index, self) =>
-        index === self.findIndex((t) => t.ITEM_GROUP === item.ITEM_GROUP) // Ensure uniqueness
+        index === self.findIndex((t) => t.ITEM_GROUP === item.ITEM_GROUP)
     )
     .map((item, index) => ({
       id: index + 1,
       main: item.PARENT_GROUP,
       name: item.ITEM_GROUP,
-    }));
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
   const GrendSubCategory = category
     .filter(
       (item, index, self) =>
-        index === self.findIndex((t) => t.CHILD_GROUP === item.CHILD_GROUP) // Ensure uniqueness
+        index === self.findIndex((t) => t.CHILD_GROUP === item.CHILD_GROUP)
     )
     .map((item, index) => ({
       id: index + 1,
       main: item.ITEM_GROUP,
       name: item.CHILD_GROUP,
-    }));
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
   const [categories, setCategories] = useState(MainCategory);
 
   // Filter function based on the search query
@@ -624,7 +629,11 @@ const ItemScreen = ({ navigation, route }) => {
                     source={require("../assets/icons/searchIcons/no_result.png")}
                   />
                   <Text style={{ fontSize: 25 }}>אין פריטים לרכב זה</Text>
-                  <View style={{ flexDirection: "row" }}>
+                  <View
+                    style={{
+                      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                    }}
+                  >
                     <Text style={{ fontSize: 20 }}>לקבלת מידע נוסף: </Text>
                     <TouchableOpacity
                       onPress={() => {
@@ -646,7 +655,11 @@ const ItemScreen = ({ navigation, route }) => {
             animationType="slide" // Animates the popup from the bottom
             onRequestClose={togglePopUp} // Closes the modal on Android back button
           >
-            <CarInfoPop data={carData} onClose={togglePopUp} />
+            <CarInfoPop
+              data={carData}
+              carNumber={carNumber}
+              onClose={togglePopUp}
+            />
           </Modal>
         </KeyboardAvoidingView>
       </View>
@@ -873,7 +886,7 @@ const styles = StyleSheet.create({
   },
 
   addresViewText: {
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 10,

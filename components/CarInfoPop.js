@@ -11,8 +11,31 @@ import {
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
 
-const PopUp = ({ onClose, data }) => {
+// Helper scaling functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
+
+const formatCarNumber = (carNumber) => {
+  if (!carNumber) return "--------------"; // Default value if undefined/null
+
+  let carStr = carNumber.toString();
+  if (carStr.length === 7) {
+    return `${carStr.slice(0, 2)}-${carStr.slice(2, 5)}-${carStr.slice(5)}`;
+  } else if (carStr.length === 8) {
+    return `${carStr.slice(0, 3)}-${carStr.slice(3, 5)}-${carStr.slice(5)}`;
+  }
+  return carNumber; // Return as is if format doesn't match
+};
+
+const PopUp = ({ onClose, data, carNumber }) => {
+  console.log("====================================");
+  console.log("data = " + JSON.stringify(data));
+  console.log("====================================");
   return (
     <View style={styles.modalOverlay}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -24,49 +47,51 @@ const PopUp = ({ onClose, data }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Image source={require("../assets/icons/searchIcons/Close.png")} />
         </TouchableOpacity>
-        <Text style={styles.header}>
-          {data.MODEL} {data.MANUFACTURE_YEAR}
+        <View style={styles.license_platel}>
+          <Image
+            style={styles.license_icon}
+            source={require("../assets/license_platel.png")}
+          />
+          <Text style={styles.license_plate_number}>
+            {formatCarNumber(carNumber)}
+          </Text>
+        </View>
+
+        <Text style={styles.carInfoHader}>
+          {data.MANUFACTURER} {data.MODEL}
         </Text>
-        <View style={styles.tableContainer}>
-          {/* Row 1 */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableHeaderCell}>יצרן</Text>
-            <Text style={styles.tableDataCell}>{data.MANUFACTURER}</Text>
-            <Text style={styles.tableHeaderCell}>מודל</Text>
-            <Text style={styles.tableDataCell}>{data.MODEL}</Text>
-          </View>
 
-          {/* Row 2 */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableHeaderCell}>שנה</Text>
-            <Text style={styles.tableDataCell}>{data.MANUFACTURE_YEAR}</Text>
-            <Text style={styles.tableHeaderCell}>דגם מנוע</Text>
-            <Text style={styles.tableDataCell}>{data.ENGINE_MODEL}</Text>
-          </View>
+        <View style={styles.carInfoView}>
+          {data.MANUFACTURE_YEAR && (
+            <Text style={styles.carInfoText}>שנת {data.MANUFACTURE_YEAR} </Text>
+          )}
+          {data.CAPACITY && (
+            <Text style={styles.carInfoText}>נפח {data.CAPACITY} </Text>
+          )}
+        </View>
 
-          {/* Row 3 */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableHeaderCell}>נפח</Text>
-            <Text style={styles.tableDataCell}>{data.CAPACITY}</Text>
-            <Text style={styles.tableHeaderCell}>בנזין/דיזל</Text>
-            <Text style={styles.tableDataCell}>{data.GAS}</Text>
-          </View>
+        <View style={styles.carInfoView}>
+          {data.ENGINE_MODEL && (
+            <Text style={styles.carInfoText}>
+              דגם מנוע: {data.ENGINE_MODEL}{" "}
+            </Text>
+          )}
+        </View>
 
-          {/* Row 4 */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableHeaderCell}>גיר</Text>
-            <Text style={styles.tableDataCell}>{data.GEAR}</Text>
-            <Text style={styles.tableHeaderCell}>הנעה</Text>
-            <Text style={styles.tableDataCell}>{data.PROPULSION}</Text>
-          </View>
+        <View style={styles.carInfoView}>
+          {data.GEAR && (
+            <Text style={styles.carInfoText}>גיר {data.GEAR} </Text>
+          )}
+          {data.PROPULSION && (
+            <Text style={styles.carInfoText}>{data.PROPULSION}</Text>
+          )}
+        </View>
 
-          {/* Row 5 */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableHeaderCell}>מספר דלתות</Text>
-            <Text style={styles.tableDataCell}>{data.DOORS}</Text>
-            <Text style={styles.tableHeaderCell}>מרכב</Text>
-            <Text style={styles.tableDataCell}>{data.BODY}</Text>
-          </View>
+        <View style={styles.carInfoView}>
+          {data.DOORS && (
+            <Text style={styles.carInfoText}>{data.DOORS} דלתות </Text>
+          )}
+          {data.BODY && <Text style={styles.carInfoText}>{data.BODY}</Text>}
         </View>
       </View>
     </View>
@@ -112,45 +137,53 @@ const styles = StyleSheet.create({
     zIndex: 3,
     marginBottom: 10,
   },
-  header: {
-    fontSize: 25,
+  license_platel: {
+    width: scale(230),
+    height: verticalScale(52),
+    backgroundColor: "#ffcc33",
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 3,
+    marginBottom: scale(10),
+    alignSelf: "center",
+    flexDirection: "row-reverse",
+  },
+  license_plate_number: {
+    fontSize: scale(30),
+    color: "black",
+    fontWeight: "bold",
+    alignContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  license_icon: {
+    height: verticalScale(48),
+    width: scale(32),
+    borderRadius: 2,
+    resizeMode: "contain",
+    alignSelf: "center",
+    marginLeft: verticalScale(15),
+    backgroundColor: "transparent",
+  },
+  carInfoHader: {
     textAlign: "center",
+    fontSize: scale(25),
     fontWeight: "bold",
-    marginBottom: 5,
-    bottom: 30,
     color: "#1A2540",
+    marginBottom: 10,
   },
-
-  icon: {
-    right: 10,
-  },
-
-  tableRow: {
-    flexDirection: "row", // Each row holds cells in a row
-    marginVertical: 0,
-  },
-  tableHeaderCell: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "left",
-    color: "white",
-    borderWidth: 0.2, // Border thickness
-    borderColor: "#000", // Border color
-    padding: 8, // Spacing inside cells
-    backgroundColor: "#1A2540", // Example background for header cells
-  },
-  // Style for data (value) cells
-  tableDataCell: {
-    flex: 1,
-    fontSize: 16,
-    textAlign: "left",
+  carInfoText: {
+    fontSize: 20,
     color: "#1A2540",
-    borderWidth: 0.2,
-    borderColor: "#000",
-    padding: 8,
-    backgroundColor: "#EBEDF5", // Example background for data cells
-    // For proper RTL direction (if needed):
-    // writingDirection: I18nManager.isRTL ? "rtl" : "ltr",
+    marginHorizontal: 15,
+    alignContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  carInfoView: {
+    flexDirection: "row",
+    alignSelf: "center",
   },
 });

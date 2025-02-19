@@ -8,6 +8,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 const { width, height } = Dimensions.get("window");
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Helper functions to scale sizes
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const Button = ({ title, onPress = () => {}, loading, enable }) => {
   return (
@@ -43,8 +51,8 @@ export default Button;
 const styles = StyleSheet.create({
   Btn: {
     width: "100%",
-    borderRadius: 10,
-    height: height * 0.07,
+    borderRadius: moderateScale(10),
+    height: verticalScale(50), // Responsive height based on device height
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#ED2027",
@@ -57,9 +65,9 @@ const styles = StyleSheet.create({
   },
   Text: {
     color: "white",
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "700",
-    textAlign: "center", // Ensure the text is centered regardless of RTL/LTR
+    textAlign: "center",
   },
   DisabledText: {
     color: "#E0E0E0", // Lighter color for text when disabled

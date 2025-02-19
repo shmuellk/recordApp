@@ -57,7 +57,9 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
           <Image source={require("../assets/icons/searchIcons/Close.png")} />
         </TouchableOpacity>
         <Text style={styles.header}>
-          {title} :{subTitle}
+          {I18nManager.isRTL
+            ? `${title} : ${subTitle}`
+            : `${subTitle} : ${title}`}
         </Text>
 
         {/* FlatList */}
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
     marginBottom: 5,
-    bottom: 30,
+    // bottom: 30,
     color: "#1A2540",
   },
   tableRow: {

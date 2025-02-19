@@ -27,7 +27,9 @@ const PopUp = ({ data, onClose, title, loading }) => {
 
       <View style={styles.infoLine}>
         <Text style={styles.infoHeader}>תיאור פריט: </Text>
-        <Text style={styles.tableCell}>{item.DSCRIPTION}</Text>
+        <Text style={styles.tableCell} numberOfLines={1}>
+          {item.DSCRIPTION}
+        </Text>
       </View>
 
       <View style={styles.infoLine}>

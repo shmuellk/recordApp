@@ -10,6 +10,7 @@ import {
   I18nManager,
   TextInput,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the path
@@ -18,6 +19,16 @@ import Button from "../components/Button";
 import SuccessPopup from "../components/SuccessPopup";
 
 const { width, height } = Dimensions.get("window");
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Scale horizontally based on screen width
+const scale = (size) => (width / guidelineBaseWidth) * size;
+// Scale vertically based on screen height
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+// Optionally, use a moderate scale if you want less aggressive scaling
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const CartScreen = ({ navigation, route }) => {
   const [quantities, setQuantities] = useState({}); // Manage quantities for each item in the cart
@@ -29,6 +40,8 @@ const CartScreen = ({ navigation, route }) => {
   const [updatingItem, setUpdatingItem] = useState({});
   const [popupsQueue, setPopupsQueue] = useState([]);
   const [currentPopup, setCurrentPopup] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [timestamp] = useState(Date.now());
 
   useEffect(() => {
@@ -271,23 +284,49 @@ const CartScreen = ({ navigation, route }) => {
               </View>
             </View>
             <View>
-              <View style={{ flexDirection: "row" }}>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                }}
+              >
                 <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
                 <Text style={Cardstyles.infoText}>{item.SKU}</Text>
               </View>
-              <View style={{ flexDirection: "row" }}>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                }}
+              >
                 <Text style={Cardstyles.infoTitle}>מותג : </Text>
                 <Text style={Cardstyles.infoText}>{item.brand}</Text>
               </View>
             </View>
           </View>
           <View style={Cardstyles.imageData}>
-            <Image
-              style={Cardstyles.image}
-              source={{
-                uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedImage(
+                  `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`
+                );
+                setIsModalVisible(true);
               }}
-            />
+            >
+              <Image
+                style={Cardstyles.image}
+                source={{
+                  uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+                }}
+              />
+            </TouchableOpacity>
+            <View style={Cardstyles.priceView}>
+              <View style={Cardstyles.priceView}>
+                <Text style={Cardstyles.priceText}>X {quantity}</Text>
+                {/* show '₪ ...' plus the decided price */}
+                <Text style={Cardstyles.priceText}>
+                  ₪ {displayPrice.toFixed(2)}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -334,7 +373,11 @@ const CartScreen = ({ navigation, route }) => {
               <TouchableOpacity
                 style={[
                   Cardstyles.removeButton,
-                  { backgroundColor: "#45f248", marginRight: 10 },
+                  {
+                    backgroundColor: "#45f248",
+                    marginRight: I18nManager.isRTL ? 10 : null,
+                    marginLeft: I18nManager.isRTL ? null : 10,
+                  },
                 ]}
                 onPress={handleUpdateItemClick}
                 disabled={!!updatingItem[item.id]} // הטעינה רק לפריט הזה
@@ -358,16 +401,6 @@ const CartScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
           )}
-        </View>
-
-        <View style={Cardstyles.priceView}>
-          <View style={Cardstyles.priceView}>
-            <Text style={Cardstyles.priceText}>X {quantity}</Text>
-            {/* show '₪ ...' plus the decided price */}
-            <Text style={Cardstyles.priceText}>
-              ₪ {displayPrice.toFixed(2)}
-            </Text>
-          </View>
         </View>
       </View>
     );
@@ -428,7 +461,7 @@ const CartScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <>
-              <View style={{ flex: 7.1 }}>
+              <View style={{ flex: 6.8 }}>
                 <FlatList
                   data={cartItems}
                   renderItem={({ item }) => renderItem({ item })}
@@ -441,7 +474,7 @@ const CartScreen = ({ navigation, route }) => {
               </View>
 
               <View style={styles.Separator} />
-              <View style={{ flex: 1.4 }}>
+              <View style={{ flex: 1.7 }}>
                 <View style={styles.totalPriceView}>
                   <Text style={styles.totalPriceLabel}>שווי ההזמנה :</Text>
                   <Text style={styles.totalPriceValue}>
@@ -466,6 +499,28 @@ const CartScreen = ({ navigation, route }) => {
               </View>
             </>
           )}
+          <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsModalVisible(false)}
+          >
+            <View style={modalStyles.modalBackground}>
+              <TouchableOpacity
+                style={modalStyles.closeArea}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Icon name="close" size={30} color="white" />
+              </TouchableOpacity>
+              <View style={modalStyles.imageContainer}>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={modalStyles.fullImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
+          </Modal>
         </View>
       )}
     </>
@@ -477,128 +532,123 @@ export default CartScreen;
 const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
-    width: width,
-    height: 200,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    width: width * 0.95, // 95% of the screen width
+    height: verticalScale(200), // scales with screen height
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(10),
   },
   itemDataView: {
     flex: 7.5,
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   amoutAndPriceView: {
     flex: 2.5,
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   textData: {
     flex: 7,
-    alignItems: "flex-start",
-    top: 5,
-    paddingHorizontal: 10,
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
+    top: verticalScale(5),
+    paddingHorizontal: scale(10),
   },
   haderText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "bold",
   },
   infoView: {
-    flexDirection: "row",
-    marginTop: 5,
-    marginBottom: 5,
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    marginTop: verticalScale(5),
+    marginBottom: verticalScale(5),
   },
   infoText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: "#7E7D83",
   },
   infoTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#1A2540",
     fontWeight: "bold",
   },
   leftText: {
-    alignItems: "flex-start",
-    marginRight: 10,
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
+    marginRight: I18nManager.isRTL ? scale(10) : null,
+    marginLeft: I18nManager.isRTL ? null : scale(10),
   },
   imageData: {
     flex: 3,
-    alignItems: "center", // Centering the image
+    flexDirection: "column",
+    alignItems: "center",
     justifyContent: "flex-start",
-    bottom: 10,
+    bottom: verticalScale(10),
   },
   image: {
-    width: 130, // Set appropriate width
-    height: 130, // Set appropriate height
-    resizeMode: "contain", // Adjust image aspect ratio
+    width: scale(100),
+    height: verticalScale(100),
+    resizeMode: "contain",
   },
   orderQuantity: {
-    flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
-    alignItems: "center", // Vertically align the items
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignItems: "center",
     alignSelf: "center",
-    alignContent: "center",
     justifyContent: "center",
-    // justifyContent: "space-between", // Equal spacing between items
-    width: 100, // Increased width to accommodate buttons and input
-    height: 40,
+    width: scale(100),
+    height: verticalScale(40),
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 15,
+    borderRadius: scale(15),
   },
   button: {
-    paddingVertical: 8, // Match vertical padding for better button size
-    justifyContent: "center", // Center align the content
+    paddingVertical: verticalScale(8),
+    justifyContent: "center",
     alignItems: "center",
   },
   quantityText: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
   },
   removeButtonContainer: {
-    marginLeft: 10, // Adds spacing between the remove button and quantity selector
-    justifyContent: "center", //
-    flexDirection: "row",
-    alignContent: "center",
+    marginLeft: scale(10),
+
+    justifyContent: "center",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
   },
   removeButton: {
-    width: 80,
-    height: 30, // Same height as the orderQuantity container
+    width: scale(80),
+    height: verticalScale(30),
     backgroundColor: "#EBEDF5",
-    borderRadius: 15,
+    borderRadius: scale(15),
     justifyContent: "center",
     alignItems: "center",
   },
   removeButtonText: {
     color: "black",
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
   },
   priceView: {
-    position: "absolute",
-    bottom: 15,
-    right: 10,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    alignContent: "center",
-    alignItems: "flex-start",
+    right: I18nManager.isRTL ? scale(10) : null,
+    left: I18nManager.isRTL ? null : scale(10),
+    borderRadius: scale(15),
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
   priceText: {
-    fontSize: 17,
+    fontSize: moderateScale(17),
     fontWeight: "bold",
-    color: "black",
     color: "#1A2540",
   },
   quantityInput: {
-    width: 50, // Adjust width to balance between buttons
-    height: 30, // Reduce height for better fit within the container
+    width: scale(50),
+    height: verticalScale(30),
     textAlign: "center",
     borderWidth: 1,
     borderColor: "white",
-    borderRadius: 5,
-    fontSize: 16,
+    borderRadius: scale(5),
+    fontSize: moderateScale(16),
     fontWeight: "bold",
     color: "#000",
     backgroundColor: "#fff",
-    marginHorizontal: 5, // Space between the input and buttons
+    marginHorizontal: scale(5),
   },
 });
 
@@ -611,11 +661,6 @@ const styles = StyleSheet.create({
   container2: {
     flex: 1,
     backgroundColor: "white",
-    alignContent: "center",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyCartViewContainer: {
     alignItems: "center",
     justifyContent: "center",
   },
@@ -623,11 +668,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#EBEDF5",
-    height: 150,
-    width: 150,
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    height: scale(150),
+    width: scale(150),
+    borderRadius: scale(15),
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
     elevation: 15,
   },
   massegeView: {
@@ -635,47 +680,68 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   mainHader: {
-    marginTop: 20,
-    fontSize: 30,
+    marginTop: verticalScale(20),
+    fontSize: moderateScale(30),
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
     color: "#1A2540",
   },
   SubHader: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     color: "#7E7D83",
   },
-  cartContent: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
   ItemsSeparator: {
-    height: 1.5,
+    height: verticalScale(1.5),
     width: width * 0.9,
     alignSelf: "center",
     backgroundColor: "#EBEDF5",
   },
   Separator: {
-    height: 2,
+    height: verticalScale(2),
     width: width,
     alignSelf: "center",
     backgroundColor: "#00000029",
   },
   totalPriceView: {
-    flexDirection: "row", // Align items in RTL (Right-to-Left)
-    justifyContent: "space-between", // Space between the label and the price
-    alignItems: "center", // Vertically center the items
-    paddingHorizontal: 25, // Padding on left and right
-    top: 5,
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: scale(25),
+    top: verticalScale(5),
   },
   totalPriceLabel: {
-    fontSize: 18, // Larger font size for the price
-    fontWeight: "bold", // Bold for the price
-    color: "#1A2540", // Dark color for the price
+    fontSize: moderateScale(18),
+    fontWeight: "bold",
+    color: "#1A2540",
   },
   totalPriceValue: {
-    fontSize: 18, // Larger font size for the price
-    fontWeight: "bold", // Bold for the price
-    color: "#1A2540", // Dark color for the price
+    fontSize: moderateScale(18),
+    fontWeight: "bold",
+    color: "#1A2540",
+  },
+});
+const modalStyles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeArea: {
+    position: "absolute",
+    top: 40,
+    right: I18nManager.isRTL ? 20 : null,
+    left: I18nManager.isRTL ? null : 20,
+    padding: 10,
+  },
+  imageContainer: {
+    width: "90%",
+    height: "80%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "100%",
+    height: "100%",
   },
 });

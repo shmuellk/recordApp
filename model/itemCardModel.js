@@ -138,6 +138,10 @@ const getRecentShopping = async (data) => {
       }
     );
 
+    console.log("====================================");
+    console.log("eee", response.data.items);
+    console.log("====================================");
+
     if (response.status === 200) {
       return response.data.items;
     } else {

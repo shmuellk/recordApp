@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -17,8 +17,8 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
 import armorModle from "../model/armorModel";
+import filterModel from "../model/filterModel";
 import SuccessPopup from "../components/SuccessPopup";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Using Ionicons for the left arrow
 import Filter from "../components/Filter2";
 import Button from "../components/Button";
 
@@ -29,14 +29,23 @@ const PaymentScreen = ({ navigation, route }) => {
   const [currentPopup, setCurrentPopup] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState("אמיר הובלות");
-  const [remarks, setRemarks] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState(userData.U_SHIPTYPE);
+  const [notes, setNotes] = useState("");
   const [isEmpty, SetIsEmpty] = useState(false);
+  const [deliveryList, setDeliveryList] = useState([]);
+  const [exitTime, setExitTime] = useState("");
+  const [exitDate, setExitDate] = useState("");
+  const phoneInputRef = useRef(null);
 
   const numericValue = parseFloat(totalPrice.replace(/[^\d.]/g, ""));
   const maam = numericValue * 0.18;
   const formattedMaam = `₪ ${maam.toFixed(2)}`;
-  const totalWithMaam = numericValue + maam;
+  let totalWithMaam = 0;
+  if (userData.U_TYPE == "אילת") {
+    totalWithMaam = numericValue;
+  } else {
+    totalWithMaam = numericValue + maam;
+  }
   const formattedTotalWithMaam = `₪ ${totalWithMaam.toFixed(2)}`;
 
   const hendelOnClick = () => {};
@@ -44,6 +53,26 @@ const PaymentScreen = ({ navigation, route }) => {
     setPopupsQueue((prevQueue) => prevQueue.slice(1));
     setCurrentPopup(null);
   };
+
+  useEffect(() => {
+    const fetchDeliveryList = async () => {
+      const data = await filterModel.getAllDeliverys();
+      const deliveryNames = data.map((item) => item.shipping_type);
+      setDeliveryList(deliveryNames);
+    };
+    fetchDeliveryList();
+  }, []);
+
+  useEffect(() => {
+    const fetchExitTime = async () => {
+      const data = await filterModel.getShippingExitTime({
+        search_value: deliveryMethod,
+      });
+      setExitTime(data[0].next_time);
+      setExitDate(data[0].schedule_date);
+    };
+    fetchExitTime();
+  }, [deliveryMethod]);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -79,12 +108,16 @@ const PaymentScreen = ({ navigation, route }) => {
               <View style={styles.priceTextView}>
                 <View style={styles.priceTextLine}>
                   <Text style={styles.priceText}>שווי ההזמנה :</Text>
-                  <Text style={styles.priceText}> {totalPrice}</Text>
+                  <Text style={styles.priceText}>{totalPrice}</Text>
                 </View>
+
                 <View style={styles.priceTextLine}>
                   <Text style={styles.priceText}>מע"מ 18%:</Text>
-                  <Text style={styles.priceText}>{formattedMaam}</Text>
+                  <Text style={styles.priceText}>
+                    {userData.U_TYPE != "אילת" ? formattedMaam : "₪ 0.00"}
+                  </Text>
                 </View>
+
                 <View
                   style={{
                     height: 1.5,
@@ -111,6 +144,10 @@ const PaymentScreen = ({ navigation, route }) => {
                   style={styles.input}
                   value={name}
                   onChangeText={setName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => {
+                    phoneInputRef.current && phoneInputRef.current.focus();
+                  }}
                 />
               </View>
 
@@ -118,43 +155,57 @@ const PaymentScreen = ({ navigation, route }) => {
                 <Text style={styles.userDataHeader}>טלפון</Text>
                 <TextInput
                   placeholder="טלפון"
-                  style={styles.input}
-                  value={name}
+                  ref={phoneInputRef}
+                  style={[styles.input, { fontSize: 14, color: "#BDC3C7" }]}
+                  value={phone}
                   onChangeText={setName}
+                  returnKeyType="done"
                 />
               </View>
 
               <View style={styles.userDataView}>
                 <Text style={styles.userDataHeader}>אופן השילוח</Text>
                 <Filter
-                  placeholder="יצרן"
-                  currentValue={"אמיר הובלות"}
-                  data={["אמיר הובלות", "שמשון הובלות", "נמזי"]} // Pass dynamic data here
+                  placeholder="אופן שילוח"
+                  currentValue={deliveryMethod}
+                  data={deliveryList} // Pass dynamic data here
                   enable={true}
                   // loading={loadingFilters.MANUFACTURER} // Pass loading state
                   onSelectItem={(value) => {
-                    enableFilter("MODEL");
-                    saveSelect("MANUFACTURER", value);
-                    saveSelect("MODEL", "");
+                    setDeliveryMethod(value);
                   }}
                 />
               </View>
               <View
                 style={{
-                  flexDirection: "row",
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
                   justifyContent: "space-between", // Added to create space between the texts
                   width: "90%", // Ensure the view has enough width to create the space
                   alignSelf: "center", // Centering the container for better alignment
                   marginBottom: 10,
                 }}
               >
-                <Text style={{ color: "red", fontWeight: "bold" }}>
+                <Text
+                  style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                >
                   זמן יציאת משלוח משוער:
                 </Text>
                 <View style={{ flexDirection: "row" }}>
-                  <Text style={{ color: "red" }}>20/08/2024</Text>
-                  <Text style={{ color: "red" }}> | </Text>
-                  <Text style={{ color: "red" }}>11:30</Text>
+                  <Text
+                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    {exitDate}
+                  </Text>
+                  <Text
+                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    |
+                  </Text>
+                  <Text
+                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    {exitTime}
+                  </Text>
                 </View>
               </View>
               <View style={styles.userDataView}>
@@ -162,13 +213,13 @@ const PaymentScreen = ({ navigation, route }) => {
                 <TextInput
                   placeholder="הערות"
                   style={styles.input}
-                  value={name}
+                  value={notes}
                   onChangeText={setName}
                 />
               </View>
               <View style={{ paddingHorizontal: 15 }}>
                 <Text style={{ fontSize: 12 }}>
-                  * ייתבנו שינויים בזמני יציאת המשלוח אשר לא בהכרח תלויים בנו.
+                  * ייתכנו שינויים בזמני יציאת המשלוח אשר לא בהכרח תלויים בנו.
                   אנו ניצור איתכם קשר במידה וישנם שינויים. אם ברצונכם לשנות את
                   זמני המשלוח באופן ידני ציינו זאת בשדה "הערות"
                 </Text>
@@ -221,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   priceTextLine: {
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     justifyContent: "space-between",
     marginVertical: height * 0.007,
   },
@@ -243,7 +294,8 @@ const styles = StyleSheet.create({
   userDataHeader: {
     fontSize: height * 0.02,
     color: "#1A2540",
-    marginLeft: width * 0.1,
+    marginLeft: I18nManager.isRTL ? width * 0.1 : null,
+    marginRight: I18nManager.isRTL ? null : width * 0.1,
     marginBottom: 5,
   },
   input: {
@@ -253,6 +305,8 @@ const styles = StyleSheet.create({
     width: width * 0.85,
     alignSelf: "center",
     backgroundColor: "white",
+    fontSize: 14,
+    color: "#BDC3C7",
   },
   rightButton: {
     position: "absolute",
@@ -262,7 +316,7 @@ const styles = StyleSheet.create({
   },
   hader: {
     flex: 1.3,
-    flexDirection: "row-reverse",
+    flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
     alignContent: "center",
     justifyContent: "center",
   },

@@ -1,5 +1,6 @@
 import axios from "axios";
 const IP = "http://128.140.125.244:8080";
+const IP2 = "http://app.record.a-zuzit.co.il:8085";
 
 const getManufacturer = async () => {
   try {
@@ -344,6 +345,32 @@ const getComplitSerch = async (data) => {
   }
 };
 
+const getAllDeliverys = async () => {
+  try {
+    let response = await axios.get(`${IP}/filter/getAllDeliverys`);
+
+    return response.data.result;
+  } catch (error) {
+    console.error("Error fetching getShippingExitTime data:", error);
+    return false;
+  }
+};
+
+const getShippingExitTime = async (data) => {
+  const search_value = data.search_value;
+  try {
+    let response = await axios.get(`${IP}/filter/getShippingExitTime`, {
+      params: {
+        search_value,
+      },
+    });
+    return response.data.result; // Return the order array directly
+  } catch (error) {
+    console.error("Error fetching getShippingExitTime data:", error);
+    return false;
+  }
+};
+
 const filterModel = {
   getManufacturer,
   getAllModel,
@@ -357,5 +384,7 @@ const filterModel = {
   getAllBooy,
   getAlternativeSKU,
   getComplitSerch,
+  getAllDeliverys,
+  getShippingExitTime,
 };
 export default filterModel;

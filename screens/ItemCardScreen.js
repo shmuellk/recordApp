@@ -23,12 +23,21 @@ import favoritsModel from "../model/favoritsModel";
 import armorModel from "../model/armorModel";
 
 const { width, height } = Dimensions.get("window");
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Helper scaling functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const ItemCardScreen = ({ route, navigation }) => {
   const { item, Brand, userData, carInfo } = route.params || {}; // Default to an empty object if item is undefined
   const [star, setStar] = useState(false);
   const [armor, setArmor] = useState(false);
   const [inStock, setInStock] = useState(Brand[0].quantity > 0 ? true : false);
+  const [Stock, setStock] = useState(Brand[0].quantity);
   const [infoByBrand, setInfoByBrand] = useState(Brand[0] || []);
   const [timestamp] = useState(Date.now());
   const [popupsQueue, setPopupsQueue] = useState([]);
@@ -41,6 +50,10 @@ const ItemCardScreen = ({ route, navigation }) => {
 
   const starAnim = useRef(new Animated.Value(0)).current;
   const armorAnim = useRef(new Animated.Value(0)).current;
+
+  console.log("====================================");
+  console.log("infoByBrand = " + JSON.stringify(infoByBrand));
+  console.log("====================================");
 
   // בכל פעם שהסטייט של star משתנה (true/false), נפעיל אנימציית fade
   useEffect(() => {
@@ -183,8 +196,10 @@ const ItemCardScreen = ({ route, navigation }) => {
 
   const handleOnPressBrand = async (item) => {
     if (item.quantity > 0) {
+      setStock(item.quantity);
       setInStock(true);
     } else {
+      setStock(0);
       setInStock(false);
     }
     setSelectedBrand(item.catalog_number);
@@ -244,7 +259,7 @@ const ItemCardScreen = ({ route, navigation }) => {
 
         <View
           style={{
-            height: 40,
+            height: verticalScale(30),
             backgroundColor: "rgba(235, 237, 245, 0.4)",
             position: "absolute",
             zIndex: 99999,
@@ -253,16 +268,20 @@ const ItemCardScreen = ({ route, navigation }) => {
             alignItems: "center",
             alignContent: "center",
             alignSelf: "center",
-            top: height * 0.04,
+            top: verticalScale(30),
           }}
         >
           {infoByBrand.teeth && (
-            <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{ padding: 5, fontWeight: "bold", fontSize: scale(16) }}
+            >
               {infoByBrand.teeth}
             </Text>
           )}
           {infoByBrand.size && (
-            <Text style={{ padding: 5, fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{ padding: 5, fontWeight: "bold", fontSize: scale(16) }}
+            >
               {infoByBrand.size}
             </Text>
           )}
@@ -328,7 +347,7 @@ const ItemCardScreen = ({ route, navigation }) => {
                 {/* Show Gross Price if showGross === true */}
                 {showGross && (
                   <Text style={styles.priceText}>
-                    מחיר ברוטו:{" "}
+                    ברוטו:{" "}
                     <Text style={styles.priceValue}>
                       ₪ {finalGross.toFixed(2)}
                     </Text>
@@ -338,13 +357,16 @@ const ItemCardScreen = ({ route, navigation }) => {
                 {/* Show Net Price if showNet === true */}
                 {showNet && (
                   <Text style={styles.priceText}>
-                    מחיר נטו:{" "}
+                    נטו:{" "}
                     <Text style={styles.priceValue}>
                       ₪ {finalNet.toFixed(2)}
                     </Text>
                   </Text>
                 )}
               </View>
+              {userData.U_TYPE == "מנהל" && (
+                <Text style={styles.brandText}>מלאי: {Stock}</Text>
+              )}
             </View>
           ) : (
             <Text>No item data available</Text>
@@ -356,10 +378,7 @@ const ItemCardScreen = ({ route, navigation }) => {
             {inStock ? (
               <View style={styles.orderQuantity}>
                 <TouchableOpacity onPress={decrement} style={styles.button}>
-                  <Image
-                    style={styles.buttonText}
-                    source={require("../assets/icons/itemCard/Minus.png")}
-                  />
+                  <Text style={styles.quantityBtnIconMinus}>—</Text>
                 </TouchableOpacity>
 
                 <TextInput
@@ -371,10 +390,7 @@ const ItemCardScreen = ({ route, navigation }) => {
                 />
 
                 <TouchableOpacity onPress={increment} style={styles.button}>
-                  <Image
-                    style={styles.buttonText}
-                    source={require("../assets/icons/itemCard/Plus.png")}
-                  />
+                  <Text style={styles.quantityBtnIconPlus}>+</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -406,7 +422,7 @@ const ItemCardScreen = ({ route, navigation }) => {
               renderItem={renderItem}
               keyExtractor={(item, index) => index.toString()}
               horizontal={true} // Enable horizontal scrolling
-              inverted={I18nManager.isRTL ? true : false}
+              inverted={true}
               showsHorizontalScrollIndicator={false} // Optional: Hide the scroll indicator
             />
           </View>
@@ -451,191 +467,221 @@ const ItemCardScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white" },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  quantityBtnIconPlus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+    right: I18nManager.isRTL ? scale(10) : null,
+    left: I18nManager.isRTL ? null : scale(10),
+  },
+  quantityBtnIconMinus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    left: I18nManager.isRTL ? scale(10) : null,
+    right: I18nManager.isRTL ? null : scale(10),
+    fontSize: 25,
+  },
+
   successPopupContainer: {
     position: "absolute",
-    top: 80,
+    top: verticalScale(80),
     width: "80%",
     alignSelf: "center",
     zIndex: 999999,
     backgroundColor: "#28A745",
-    padding: 10,
-    borderRadius: 8,
+    padding: scale(10),
+    borderRadius: scale(8),
     alignItems: "center",
   },
   successPopupText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "bold",
   },
   imageScrollerView: {
     flex: 4,
-    justifyContent: "flex-end", // Align image to the bottom
-    alignItems: "center", // Center horizontally
+    justifyContent: "flex-end",
+    alignItems: "center",
     backgroundColor: "white",
   },
-
+  infoOverlay: {
+    height: verticalScale(40),
+    backgroundColor: "rgba(235, 237, 245, 0.4)",
+    position: "absolute",
+    zIndex: 99999,
+    borderRadius: scale(10),
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    top: height * 0.04,
+    paddingHorizontal: scale(5),
+  },
+  infoOverlayText: {
+    padding: scale(5),
+    fontWeight: "bold",
+    fontSize: moderateScale(18),
+  },
   ItemInfoVeiw: {
     flex: 2,
-
-    padding: 10, // Add padding for spacing
+    padding: scale(10),
   },
   ItemBrandVeiw: {
     flex: 1.7,
     flexDirection: "column",
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
   },
   itemDetails: {
     flex: 1,
-    justifyContent: "center", // Vertically center the content
+    justifyContent: "center",
   },
   productTitleContainer: {
-    flexDirection: I18nManager.isRTL ? "row-reverse" : "row", // Align product title and star icon in a row
-    justifyContent: "space-between", // Space the title and star icon at opposite ends
-    alignItems: "center", // Vertically align items
-    marginBottom: 5, // Space between title and other information
+    flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: verticalScale(5),
   },
   productTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(22),
     fontWeight: "bold",
     color: "#3A5683",
-    textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment for the title
-    flex: 1, // Allow the title to take up the remaining space
+    textAlign: I18nManager.isRTL ? "left" : "right",
+    flex: 1,
   },
   starIcon: {
-    marginRight: 10, // Place the star icon on the left side
+    marginRight: scale(10),
   },
   skuText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#1A2540",
-    marginBottom: 5,
-    textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment
+    textAlign: I18nManager.isRTL ? "left" : "right",
   },
   brandText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#7E7D83",
-    textAlign: I18nManager.isRTL ? "left" : "right", // RTL alignment
+    textAlign: I18nManager.isRTL ? "left" : "right",
   },
   verticalSeparator: {
-    height: 1,
+    height: verticalScale(1),
     width: width * 0.95,
     alignSelf: "center",
     backgroundColor: "#EBEDF5",
   },
-  buttonsView: { flex: 2.3 },
+  buttonsView: {
+    flex: 2.3,
+  },
   AddCartButtonView: {
-    top: width * 0.1,
-    paddingHorizontal: width * 0.05,
+    top: scale(40),
+    paddingHorizontal: scale(20),
   },
   priceText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#1A2540",
-    textAlign: "right", // RTL alignment for price label
+    textAlign: "right",
     fontWeight: "bold",
-    marginRight: 20,
+    marginRight: I18nManager.isRTL ? scale(20) : null,
+    marginLeft: I18nManager.isRTL ? null : scale(20),
   },
   priceValue: {
     fontWeight: "bold",
-    color: "#1A2540", // Stronger color for price value
-    fontSize: 16,
+    color: "#1A2540",
+    fontSize: moderateScale(16),
   },
   image: {
-    width: 300, // Adjust as per your requirement
-    height: 300, // Adjust as per your requirement
-    resizeMode: "contain", // Keep the aspect ratio
-    top: 50,
+    width: scale(300),
+    height: scale(300),
+    resizeMode: "contain",
+    top: verticalScale(50),
   },
-  brandView: { padding: 10, flex: 5, top: height * 0.01 },
+  brandView: {
+    padding: scale(10),
+    flex: 5,
+    top: verticalScale(10),
+  },
   amountView: {
     flex: 5,
-    paddingHorizontal: 10,
-    top: height * 0.01,
   },
   orderQuantity: {
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
     alignSelf: "center",
     justifyContent: "space-between",
-    width: 150,
+    width: scale(125),
+    height: scale(40),
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 15,
-    // padding: 5,
+    borderRadius: scale(15),
   },
   button: {
-    padding: 15,
-  },
-  buttonText: {},
-
-  quantityText: {
-    fontSize: 20,
-    fontWeight: "bold",
+    // padding: scale(10),
   },
   armor: {
     flex: 1,
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    justifyContent: "space-between", // Spreads content to the edges
+    justifyContent: "space-between",
     alignItems: "center",
-    top: -15,
-    // alignItems: "center", // Vertically centers the content
-    paddingHorizontal: 10,
+    top: verticalScale(-15),
+    paddingHorizontal: scale(10),
   },
   inventoryText: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     color: "#ED2027",
     fontWeight: "bold",
   },
   armorText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     color: "#7E7D83",
-    right: 10,
+    right: scale(10),
   },
   itemContainer: {
-    width: 100, // Constant width for each item
-    marginRight: 10,
+    width: scale(100),
+    marginRight: I18nManager.isRTL ? scale(10) : null,
+    marginLeft: I18nManager.isRTL ? null : scale(10),
     alignItems: "center",
     backgroundColor: "white",
-    borderRadius: 10,
+    borderRadius: scale(10),
     justifyContent: "center",
-    borderWidth: 2, // Define the border width
-    borderColor: "#ccc", // Define the border color
+    borderWidth: 2,
+    borderColor: "#ccc",
   },
   brandImage: {
     width: "80%",
     height: "80%",
     resizeMode: "stretch",
-    borderRadius: 10,
+    borderRadius: scale(10),
   },
   PopUpView: {
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     justifyContent: "space-between",
     bottom: height * 0.001,
-    paddingHorizontal: 15,
+    paddingHorizontal: scale(15),
   },
   rightButton: {
     position: "absolute",
-    top: 55, // או כל ערך שמתאים למיקום הרצוי
-    left: I18nManager.isRTL ? 20 : 20, // אם אתם רוצים למקם את האייקון משני הצדדים, אפשר להשתמש בתנאי
+    top: verticalScale(55),
+    left: I18nManager.isRTL ? scale(20) : null,
+    right: I18nManager.isRTL ? null : scale(20),
     zIndex: 1,
-    width: 40, // קבעו רוחב לפי גודל האייקון
-    height: 40, // קבעו גובה לפי גודל האייקון
+    width: scale(20),
+    height: scale(20),
     justifyContent: "center",
     alignItems: "center",
   },
-
   quantityInput: {
-    width: 50, // Adjust width to balance between buttons
-    height: 30, // Reduce height for better fit within the container
+    width: scale(50),
+    height: verticalScale(30),
     textAlign: "center",
     borderWidth: 1,
     borderColor: "white",
-    borderRadius: 5,
-    fontSize: 16,
+    borderRadius: scale(5),
+    fontSize: moderateScale(16),
     fontWeight: "bold",
     color: "#000",
     backgroundColor: "#fff",
-    marginHorizontal: 5, // Space between the input and buttons
+    // marginHorizontal: scale(5),
   },
 });
-
 export default ItemCardScreen;

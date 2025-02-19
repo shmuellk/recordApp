@@ -13,175 +13,231 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
-import armorModle from "../model/armorModel";
+import salesModel from "../model/salesModel";
 import SuccessPopup from "../components/SuccessPopup";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Using Ionicons for the left arrow
+import carModel from "../model/carsModel";
+import itemCardModel from "../model/itemCardModel";
 
 const { width, height } = Dimensions.get("window");
+// Base dimensions from your design (adjust these values as needed)
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Scaling helper functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const ArmorScreen = ({ navigation, route }) => {
   const [quantities, setQuantities] = useState([]);
   const [isEmpty, SetIsEmpty] = useState(false);
+  const [Items, setItems] = useState([]);
   const { userData } = route.params;
-  const [armorsItems, setArmorsItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [removingItem, setRemovingItem] = useState({});
   const [addItemToCart, setAddItemToCart] = useState({});
   const [popupsQueue, setPopupsQueue] = useState([]);
   const [currentPopup, setCurrentPopup] = useState(null);
   const [timestamp] = useState(Date.now());
-  const Items = [
-    {
-      id: "1",
-      name: "חיישן קרנק",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 16.99",
-      massege: "משמש כאחורי",
-      SKU: "Dx 36393464",
-      brand: "optimal",
-      amount: 2,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2R1lcqAv6bIbhM8Rz7EFaRvc7LGn7324TPQ&s",
-    },
-    {
-      amount: 1500,
-      id: "2",
-      name: "חיישן קמשפט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      massege: "משמש כקידמי",
-      SKU: "Da 3367895",
-      brand: "ironman",
-      price: "₪ 15.99",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHuEm-A8VhRFQLApRaDRm9UqDddo_kB-Ykeg&s",
-    },
-    {
-      amount: 300,
-      id: "3",
-      name: "מיסב ציריה",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      price: "₪ 2500.99",
-      year: "2006-2009",
-      SKU: "cc 87956774",
-      brand: "skf",
-      massege: "4 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL45GnDnLrfO_Ahwv_-grNGBLB0wnY6LVjSw&s",
-    },
-    {
-      amount: 0,
-      id: "4",
-      name: "תרמוסטט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 88.99",
-      SKU: "fd 000688994",
-      brand: "MAD",
-      massege: "2 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpwcFdsQdS1VxdZ8YMKYhU1TQtzSqKexlDxg&s",
-    },
-    {
-      amount: 300,
-      id: "5",
-      name: "מיסב ציריה",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      price: "₪ 2500.99",
-      year: "2006-2009",
-      SKU: "cc 87956774",
-      brand: "skf",
-      massege: "4 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQL45GnDnLrfO_Ahwv_-grNGBLB0wnY6LVjSw&s",
-    },
-    {
-      amount: 0,
-      id: "6",
-      name: "תרמוסטט",
-      carName: "פרואייס סיטי ורסו",
-      volume: "1.5HDI",
-      year: "2006-2009",
-      price: "₪ 88.99",
-      SKU: "fd 000688994",
-      brand: "MAD",
-      massege: "2 יחידות ברכב",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpwcFdsQdS1VxdZ8YMKYhU1TQtzSqKexlDxg&s",
-    },
-  ];
 
-  // useEffect(() => {
-  //   if (!currentPopup && popupsQueue.length > 0) {
-  //     // קח את הראשון בתור והצג אותו
-  //     setCurrentPopup(popupsQueue[0]);
-  //   }
-  // }, [popupsQueue, currentPopup]);
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // Take the first popup from the queue and show it
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
 
-  // const showPopup = (text, color = "#28A745") => {
-  //   const popupId = Date.now();
-  //   setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
-  // };
+  // Show a popup and add it to the queue
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
+  };
 
-  // const handlePopupDismiss = () => {
-  //   setPopupsQueue((prevQueue) => prevQueue.slice(1));
-  //   setCurrentPopup(null);
-  // };
+  // Remove the current popup from the queue
+  const handlePopupDismiss = () => {
+    setPopupsQueue((prevQueue) => prevQueue.slice(1));
+    setCurrentPopup(null);
+  };
 
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          // 1) Fetch data from your model:
+          const data = await salesModel.getAllSalesProdact();
+
+          if (!data || data.length === 0) {
+            setItems([]);
+            setQuantities([]);
+            SetIsEmpty(true);
+            return; // Skip further processing
+          }
+
+          // 2) Transform each item to match the shape you want:
+          const transformedData = data.map((item) => {
+            // Split the name field by comma
+            const nameParts = item.NAME ? item.NAME.split(",") : ["", "", ""];
+
+            return {
+              id: item.ID,
+              SKU: item.CODE,
+              itemName: nameParts[0]?.trim() || "", // First part - Item Name
+              carName: nameParts[1]?.trim() || "", // Second part - Car Name
+              years: nameParts[2]?.trim() || "", // Third part - Years
+              net_price: item.U_XIS_NetPrice,
+              image: item.U_BSYIMAGE4,
+              sale_quantity: item.U_QUANTITY,
+              amount: 1,
+            };
+          });
+
+          console.log("transformedData: " + JSON.stringify(transformedData));
+          setItems(transformedData);
+          const updatedQuantities = transformedData.map((item) => ({
+            id: item.id,
+            amount: item.amount,
+          }));
+          setQuantities(updatedQuantities);
+          SetIsEmpty(false);
+        } catch (error) {
+          console.error("Failed to load cart items:", error);
+          SetIsEmpty(true);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, [userData])
+  );
   const increment = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: (prevQuantities[id] || 1) + 1,
-    }));
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return { ...q, amount: q.amount + 1 };
+        }
+        return q;
+      })
+    );
   };
 
   const decrement = (id) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [id]: prevQuantities[id] > 1 ? prevQuantities[id] - 1 : 1,
-    }));
+    setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return { ...q, amount: q.amount - 1 > 0 ? q.amount - 1 : 1 };
+        }
+        return q;
+      })
+    );
+  };
+  const handleAddItemToCart = async (itemId, itemSKU, newQuantity) => {
+    setAddItemToCart((prev) => ({ ...prev, [itemId]: true }));
+    try {
+      await cartModel.addItemToCart({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToBy: newQuantity,
+        status: "ADD",
+      });
+
+      showPopup("הפריט נוסף לעגלה!");
+
+      setItems((prevFavoritsItems) =>
+        prevFavoritsItems.map((item) =>
+          item.id === itemId ? { ...item, amount: 1 } : item
+        )
+      );
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => (q.id === itemId ? { ...q, amount: 1 } : q))
+      );
+    } catch (e) {
+      console.log("Failed to update item:", e);
+    } finally {
+      setAddItemToCart((prev) => ({ ...prev, [itemId]: false }));
+    }
   };
 
-  const handleQuantityChange = (text, id) => {
-    // אם רוצים לוודא רק מספר > 0
-    const num = parseInt(text, 10);
-    if (!isNaN(num) && num >= 1) {
-      setQuantities((prevQuantities) => ({
-        ...prevQuantities,
-        [id]: num,
-      }));
-    } else {
-      setQuantities(1);
+  const handleSelect = async (data) => {
+    try {
+      const product = await carModel.getProdactsById({
+        CATALOG_NUMBER: data,
+      });
+
+      try {
+        const Brand = await itemCardModel.getItemBrand({
+          CATALOG_NUMBER: product[0].CATALOG_NUMBER,
+          CHILD_GROUP: product[0].CHILD_GROUP,
+          DESCRIPTION_NOTE: product[0].DESCRIPTION_NOTE,
+        });
+        navigation.navigate("ItemCardScreen", {
+          item: product[0],
+          Brand,
+        });
+      } catch (error) {
+        console.log("====================================");
+        console.log("Error: " + error);
+        console.log("====================================");
+      }
+    } catch (error) {
+      console.error("Error fetching manufacturers:", error);
     }
   };
 
   const renderItem = ({ item }) => {
-    const quantity = quantities[item.id] || 1;
+    const handleQuantityChange = (text, id) => {
+      // Keep only numbers
+      const numericValue = text.replace(/[^0-9]/g, "");
+
+      setQuantities((prevQuantities) =>
+        prevQuantities.map((q) => {
+          if (q.id === id) {
+            const newQuantity =
+              !numericValue || parseInt(numericValue, 10) === 0
+                ? 1
+                : parseInt(numericValue, 10);
+            return { ...q, amount: newQuantity };
+          }
+          return q;
+        })
+      );
+    };
+
+    const foundQuantity = quantities.find((q) => q.id === item.id);
+    const amount = foundQuantity ? foundQuantity.amount : item.amount;
+
+    const handleUpdateItemClick = () => {
+      handleAddItemToCart(item.id, item.SKU, amount);
+    };
 
     return (
       <View style={Cardstyles.cardContainer}>
-        {/* אם יש "מתנה" או "מבצע" שרוצים להציג, אפשר להוסיף כאן תגית פינתית */}
-        {/* לדוגמה */}
-        <View style={Cardstyles.promotionBadge}>
-          <Text style={Cardstyles.promotionBadgeText}>1 + 10{"\n"}מתנה</Text>
-        </View>
-
-        <Image
-          style={Cardstyles.cardImage}
-          source={{ uri: item.image }}
-          resizeMode="contain"
-        />
+        {item.sale_quantity && (
+          <View style={Cardstyles.promotionBadge}>
+            <Text style={Cardstyles.promotionBadgeText}>
+              1 + {item.sale_quantity}
+              {"\n"}מתנה
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity onPress={() => handleSelect(item.SKU)}>
+          <Image
+            style={Cardstyles.cardImage}
+            source={{
+              uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+            }}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
         <Text style={Cardstyles.cardTitle}>{item.SKU}</Text>
-        <Text style={Cardstyles.cardSubTitle}>{item.name}</Text>
+        <Text style={Cardstyles.cardSubTitle}>{item.itemName}</Text>
         <Text style={Cardstyles.cardSubTitle}>{item.carName}</Text>
-        <Text style={Cardstyles.cardSubTitle}>{item.year}</Text>
-        <Text style={Cardstyles.cardPrice}>{item.price}</Text>
+        <Text style={Cardstyles.cardSubTitle}>{item.years}</Text>
+        <Text style={Cardstyles.cardPrice}>{item.net_price}</Text>
 
         <View style={Cardstyles.quantityAndButtonContainer}>
           <View style={Cardstyles.orderQuantity}>
@@ -195,7 +251,7 @@ const ArmorScreen = ({ navigation, route }) => {
             <View style={Cardstyles.quantityInputContainer}>
               <TextInput
                 style={Cardstyles.quantityInput}
-                value={quantity.toString()}
+                value={amount.toString()}
                 onChangeText={(text) => handleQuantityChange(text, item.id)}
                 keyboardType="numeric"
                 selectTextOnFocus={true}
@@ -211,8 +267,16 @@ const ArmorScreen = ({ navigation, route }) => {
           </View>
           {/* כפתור הוסף לעגלה */}
           {item.amount > 0 ? (
-            <TouchableOpacity style={Cardstyles.addButton}>
-              <Text style={Cardstyles.addButtonText}>הוסף לעגלה</Text>
+            <TouchableOpacity
+              style={Cardstyles.addButton}
+              onPress={handleUpdateItemClick}
+              disabled={!!addItemToCart[item.id]}
+            >
+              {addItemToCart[item.id] ? (
+                <ActivityIndicator color="red" />
+              ) : (
+                <Text style={Cardstyles.addButtonText}>הוסף לעגלה</Text>
+              )}
             </TouchableOpacity>
           ) : (
             <Text style={Cardstyles.outOfStockText}>אזל מהמלאי</Text>
@@ -221,14 +285,15 @@ const ArmorScreen = ({ navigation, route }) => {
       </View>
     );
   };
+
   return (
     <>
-      {/* <SuccessPopup
+      <SuccessPopup
         text={currentPopup?.text || ""}
         visible={!!currentPopup} // אם currentPopup קיים, נציג
         onDismiss={handlePopupDismiss}
         color={currentPopup?.color || "#28A745"}
-      /> */}
+      />
 
       <View style={styles.container}>
         <View style={styles.hader}>
@@ -309,6 +374,7 @@ const styles = StyleSheet.create({
   columnWrapper: {
     // מרווח אופקי בין הכרטיסים באותו טור
     justifyContent: "space-around",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   ItemsSeparator: {
     height: 1.5,
@@ -403,7 +469,8 @@ const Cardstyles = StyleSheet.create({
   promotionBadge: {
     position: "absolute",
     top: 8,
-    left: 8,
+    left: I18nManager.isRTL ? 8 : null,
+    right: I18nManager.isRTL ? null : 8,
     backgroundColor: "#d01117",
     paddingVertical: 4,
     paddingHorizontal: 6,
@@ -444,7 +511,7 @@ const Cardstyles = StyleSheet.create({
     marginTop: 10,
   },
   orderQuantity: {
-    flexDirection: "row", // Ensures the children are in a row
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse", // Ensures the children are in a row
     width: 120, // Increase the overall width if needed
     height: 40,
     borderWidth: 1,

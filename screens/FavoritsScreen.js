@@ -10,14 +10,25 @@ import {
   I18nManager,
   TextInput,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+import cartModel from "../model/cartModel";
 import favoritsModel from "../model/favoritsModel";
 import SuccessPopup from "../components/SuccessPopup";
-import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+import Icon from "react-native-vector-icons/AntDesign";
 
 const { width, height } = Dimensions.get("window");
+
+// Base dimensions from your design (adjust these values as needed)
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Scaling helper functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const FavoritsScreen = ({ navigation, route }) => {
   const [quantities, setQuantities] = useState([]);
@@ -30,21 +41,23 @@ const FavoritsScreen = ({ navigation, route }) => {
   const [popupsQueue, setPopupsQueue] = useState([]);
   const [currentPopup, setCurrentPopup] = useState(null);
   const [timestamp] = useState(Date.now());
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     if (!currentPopup && popupsQueue.length > 0) {
-      // קח את הראשון בתור והצג אותו
+      // Take the first popup from the queue and show it
       setCurrentPopup(popupsQueue[0]);
     }
   }, [popupsQueue, currentPopup]);
 
-  // פונקציה שמציגה פופאפ חדש ומוסיפה אותו לתור
+  // Show a popup and add it to the queue
   const showPopup = (text, color = "#28A745") => {
     const popupId = Date.now();
     setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
   };
 
-  // כשהפופאפ הנוכחי מסיים, מסירים אותו מהתור ומאפסים, כדי לאפשר לפופאפ הבא לעלות
+  // Remove the current popup from the queue
   const handlePopupDismiss = () => {
     setPopupsQueue((prevQueue) => prevQueue.slice(1));
     setCurrentPopup(null);
@@ -71,7 +84,7 @@ const FavoritsScreen = ({ navigation, route }) => {
           // 2) Transform each item to match the shape you want:
           const transformedData = data.map((item) => ({
             id: item.ID,
-            name: item.CHILD_GROUP + " " + (item.DESCRIPTION_NOTE || ""), // guard against empty
+            name: item.CHILD_GROUP + " " + (item.DESCRIPTION_NOTE || ""),
             net_price: item.NET_PRICE,
             gross_price: item.GROSS_PRICE,
             image: item.IMAGE,
@@ -81,9 +94,7 @@ const FavoritsScreen = ({ navigation, route }) => {
             amount: 1,
           }));
 
-          console.log("====================================");
-          console.log("transformedData :" + JSON.stringify(transformedData));
-          console.log("====================================");
+          console.log("transformedData: " + JSON.stringify(transformedData));
           setFavoritsItems(transformedData);
           const updatedQuantities = transformedData.map((item) => ({
             id: item.id,
@@ -118,10 +129,7 @@ const FavoritsScreen = ({ navigation, route }) => {
     setQuantities((prevAmount) =>
       prevAmount.map((q) => {
         if (q.id === id) {
-          return {
-            ...q,
-            amount: q.amount - 1 > 0 ? q.amount - 1 : 1,
-          };
+          return { ...q, amount: q.amount - 1 > 0 ? q.amount - 1 : 1 };
         }
         return q;
       })
@@ -131,8 +139,8 @@ const FavoritsScreen = ({ navigation, route }) => {
   const handleRemovFromFavorits = async (itemId, itemSKU) => {
     setRemovingItem((prev) => ({ ...prev, [itemId]: true }));
     try {
-      // Call your API to remove the item from the backend:
-      const response = await favoritsModel.addItemToFavorits({
+      // Remove the item from favorites via your API
+      await favoritsModel.addItemToFavorits({
         userName: userData.U_USER_NAME,
         cardCode: userData.U_CARD_CODE,
         item_code: itemSKU,
@@ -141,11 +149,10 @@ const FavoritsScreen = ({ navigation, route }) => {
 
       showPopup("הפריט הוסר בהצלחה!");
 
-      setFavoritsItems((prevfavoritsItems) => {
-        const newFavoritsItems = prevfavoritsItems.filter(
-          (favoritsItems) => favoritsItems.id !== itemId
+      setFavoritsItems((prevFavoritsItems) => {
+        const newFavoritsItems = prevFavoritsItems.filter(
+          (favoritsItem) => favoritsItem.id !== itemId
         );
-        // If there are no items left, mark cart as empty
         if (newFavoritsItems.length === 0) {
           SetIsEmpty(true);
         }
@@ -165,8 +172,7 @@ const FavoritsScreen = ({ navigation, route }) => {
   const handleAddItemToCart = async (itemId, itemSKU, newQuantity) => {
     setAddItemToCart((prev) => ({ ...prev, [itemId]: true }));
     try {
-      // Call your API to remove the item from the backend:
-      const response = await cartModel.addItemToCart({
+      await cartModel.addItemToCart({
         userName: userData.U_USER_NAME,
         cardCode: userData.U_CARD_CODE,
         item_code: itemSKU,
@@ -176,8 +182,8 @@ const FavoritsScreen = ({ navigation, route }) => {
 
       showPopup("הפריט נוסף לעגלה!");
 
-      setFavoritsItems((prevfavoritsItems) =>
-        prevfavoritsItems.map((item) =>
+      setFavoritsItems((prevFavoritsItems) =>
+        prevFavoritsItems.map((item) =>
           item.id === itemId ? { ...item, amount: 1 } : item
         )
       );
@@ -186,7 +192,7 @@ const FavoritsScreen = ({ navigation, route }) => {
         prevQuantities.map((q) => (q.id === itemId ? { ...q, amount: 1 } : q))
       );
     } catch (e) {
-      console.log("Failed to Update item:", e);
+      console.log("Failed to update item:", e);
     } finally {
       setAddItemToCart((prev) => ({ ...prev, [itemId]: false }));
     }
@@ -204,22 +210,17 @@ const FavoritsScreen = ({ navigation, route }) => {
     }
 
     const handleQuantityChange = (text, id) => {
-      // השארת ספרות בלבד
+      // Keep only numbers
       const numericValue = text.replace(/[^0-9]/g, "");
 
       setQuantities((prevQuantities) =>
         prevQuantities.map((q) => {
           if (q.id === id) {
-            // בדיקה אם הערך ריק או שווה ל-0
             const newQuantity =
               !numericValue || parseInt(numericValue, 10) === 0
                 ? 1
                 : parseInt(numericValue, 10);
-
-            return {
-              ...q,
-              amount: newQuantity,
-            };
+            return { ...q, amount: newQuantity };
           }
           return q;
         })
@@ -243,27 +244,48 @@ const FavoritsScreen = ({ navigation, route }) => {
           <View style={Cardstyles.textData}>
             <Text style={Cardstyles.haderText}>{item.name}</Text>
             <View>
-              <View style={{ flexDirection: "row" }}>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                }}
+              >
                 <Text style={Cardstyles.infoTitle}>מותג : </Text>
                 <Text style={Cardstyles.infoText}>{item.brand}</Text>
               </View>
-              <View style={{ flexDirection: "row" }}>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                }}
+              >
                 <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
                 <Text style={Cardstyles.infoText}>{item.SKU}</Text>
               </View>
-              <View style={{ flexDirection: "row" }}>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                }}
+              >
                 <Text style={Cardstyles.infoTitle}>מחיר : </Text>
                 <Text style={Cardstyles.infoText}>₪ {finalNet.toFixed(2)}</Text>
               </View>
             </View>
           </View>
           <View style={Cardstyles.imageData}>
-            <Image
-              style={Cardstyles.image}
-              source={{
-                uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedImage(
+                  `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`
+                );
+                setIsModalVisible(true);
               }}
-            />
+            >
+              <Image
+                style={Cardstyles.image}
+                source={{
+                  uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+                }}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -294,27 +316,32 @@ const FavoritsScreen = ({ navigation, route }) => {
           {item.quantity > 0 && (
             <View
               style={{
-                paddingLeft: 10,
+                paddingLeft: I18nManager.isRTL ? scale(10) : null,
+                paddingRight: I18nManager.isRTL ? null : scale(10),
                 justifyContent: "center",
               }}
             >
               <TouchableOpacity
                 style={{
                   backgroundColor: "#1A2540",
-                  width: 100, // Same width as the remove button
-                  height: 40, // Same height as the remove button
-                  borderRadius: 15, // Same border radius as the remove button
+                  width: scale(100),
+                  height: verticalScale(40),
+                  borderRadius: scale(15),
                   justifyContent: "center",
                   alignItems: "center",
                 }}
                 onPress={handleUpdateItemClick}
-                disabled={!!addItemToCart[item.id]} // הטעינה רק לפריט הזה
+                disabled={!!addItemToCart[item.id]}
               >
                 {addItemToCart[item.id] ? (
                   <ActivityIndicator color="red" />
                 ) : (
                   <Text
-                    style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+                    style={{
+                      color: "white",
+                      fontSize: moderateScale(16),
+                      fontWeight: "bold",
+                    }}
                   >
                     הוסף לעגלה
                   </Text>
@@ -336,8 +363,6 @@ const FavoritsScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* <View style={Cardstyles.priceView}> </View> */}
       </View>
     );
   };
@@ -346,7 +371,7 @@ const FavoritsScreen = ({ navigation, route }) => {
     <>
       <SuccessPopup
         text={currentPopup?.text || ""}
-        visible={!!currentPopup} // אם currentPopup קיים, נציג
+        visible={!!currentPopup}
         onDismiss={handlePopupDismiss}
         color={currentPopup?.color || "#28A745"}
       />
@@ -371,14 +396,14 @@ const FavoritsScreen = ({ navigation, route }) => {
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  bottom: 50,
+                  bottom: verticalScale(50),
                   flex: 9,
                 }}
               >
                 <View style={styles.emptyCartView}>
                   <Icon
                     name="staro"
-                    size={70}
+                    size={moderateScale(70)}
                     color="#1A2540"
                     style={styles.serchItemIcon}
                   />
@@ -407,7 +432,7 @@ const FavoritsScreen = ({ navigation, route }) => {
                 <FlatList
                   data={favoritsItems}
                   renderItem={({ item }) => renderItem({ item })}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item) => item.id.toString()}
                   ItemSeparatorComponent={() => (
                     <View style={styles.ItemsSeparator} />
                   )}
@@ -417,6 +442,28 @@ const FavoritsScreen = ({ navigation, route }) => {
             </View>
           )}
         </>
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={modalStyles.modalBackground}>
+            <TouchableOpacity
+              style={modalStyles.closeArea}
+              onPress={() => setIsModalVisible(false)}
+            >
+              <Icon name="close" size={30} color="white" />
+            </TouchableOpacity>
+            <View style={modalStyles.imageContainer}>
+              <Image
+                source={{ uri: selectedImage }}
+                style={modalStyles.fullImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </Modal>
       </View>
     </>
   );
@@ -433,51 +480,43 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ItemsSeparator: {
-    height: 1.5,
+    height: verticalScale(1.5),
     width: width * 0.9,
-    alignSelf: "center",
-    backgroundColor: "#EBEDF5",
-  },
-  ItemsSeparatorFirst: {
-    height: 1.5,
-    width: width,
     alignSelf: "center",
     backgroundColor: "#EBEDF5",
   },
   emptyCartView: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#EBEDF5", // 80 is the hex code for 50% transparency
-    height: 150,
-    width: 150,
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    backgroundColor: "#EBEDF5",
+    height: scale(150),
+    width: scale(150),
+    borderRadius: scale(15),
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
     flexDirection: "row",
     elevation: 15,
-    alignItems: "center",
   },
-
   massegeView: {
     justifyContent: "center",
     alignItems: "center",
   },
   mainHader: {
-    marginTop: 20,
-    fontSize: 30,
+    marginTop: verticalScale(20),
+    fontSize: moderateScale(30),
     fontWeight: "bold",
     color: "#1A2540",
-    marginBottom: 10,
+    marginBottom: verticalScale(10),
   },
   SubHader: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     color: "#7E7D83",
   },
-
   rightButton: {
     position: "absolute",
-    right: 20,
-    top: 55, // Adjusted to be within the header
+    right: I18nManager.isRTL ? scale(20) : null,
+    left: I18nManager.isRTL ? null : scale(20),
+    top: verticalScale(35),
     zIndex: 1,
   },
   hader: {
@@ -491,11 +530,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   headerText: {
-    fontSize: 30,
+    fontSize: moderateScale(30),
     fontWeight: "bold",
     textAlign: "center",
     color: "#1A2540",
-    bottom: 15,
+    bottom: verticalScale(15),
   },
   Data: {
     flex: 8.7,
@@ -506,124 +545,148 @@ const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
     width: width,
-    minHeight: 160,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    minHeight: verticalScale(160),
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(10),
   },
   itemDataView: {
     flex: 7.5,
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   amoutAndPriceView: {
     flex: 2.5,
-    flexDirection: "row",
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   textData: {
     flex: 7,
-    alignItems: "flex-start",
-    top: 5,
-    paddingHorizontal: 10,
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
+    top: verticalScale(5),
+    paddingHorizontal: scale(10),
   },
   haderText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "bold",
   },
   infoView: {
-    flexDirection: "row",
-    marginTop: 5,
-    marginBottom: 5,
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    marginTop: verticalScale(5),
+    marginBottom: verticalScale(5),
   },
   infoText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: "#7E7D83",
   },
   infoTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#1A2540",
     fontWeight: "bold",
   },
   leftText: {
     alignItems: "flex-start",
-    marginRight: 10,
+    marginRight: I18nManager.isRTL ? scale(10) : null,
+    marginLeft: I18nManager.isRTL ? null : scale(10),
   },
   imageData: {
     flex: 3,
-    alignItems: "center", // Centering the image
-    justifyContent: "flex-start",
-    bottom: 10,
+    alignItems: "center",
+    justifyContent: I18nManager.isRTL ? "flex-start" : "flex-end",
+    bottom: verticalScale(10),
   },
   image: {
-    width: 130, // Set appropriate width
-    height: 130, // Set appropriate height
-    resizeMode: "contain", // Adjust image aspect ratio
+    width: scale(130),
+    height: scale(130),
+    resizeMode: "contain",
   },
   orderQuantity: {
-    flexDirection: "row", // Ensure all elements are in a row, adjust RTL manually
-    alignItems: "center", // Vertically align the items
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignItems: "center",
     alignSelf: "center",
-    alignContent: "center",
     justifyContent: "center",
-    // justifyContent: "space-between", // Equal spacing between items
-    width: 100, // Increased width to accommodate buttons and input
-    height: 40,
+    width: scale(100),
+    height: verticalScale(40),
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 15,
+    borderRadius: scale(15),
   },
   button: {
-    // paddingHorizontal: 3, // Adjust to reduce excessive padding
-    paddingVertical: 8, // Match vertical padding for better button size
-    justifyContent: "center", // Center align the content
+    paddingVertical: verticalScale(8),
+    justifyContent: "center",
     alignItems: "center",
   },
   quantityText: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
   },
   removeButtonContainer: {
-    marginLeft: 10, // Adds spacing between the remove button and quantity selector
-    justifyContent: "center", //
+    marginLeft: I18nManager.isRTL ? scale(10) : null,
+    marginRight: I18nManager.isRTL ? null : scale(10),
+    justifyContent: "center",
   },
   removeButton: {
-    width: 100,
-    height: 40, // Same height as the orderQuantity container
+    width: scale(100),
+    height: verticalScale(40),
     backgroundColor: "#EBEDF5",
-    borderRadius: 15,
+    borderRadius: scale(15),
     justifyContent: "center",
     alignItems: "center",
   },
   removeButtonText: {
     color: "black",
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
   },
   priceView: {
     position: "absolute",
-    bottom: 15,
-    right: 10,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    alignContent: "center",
+    bottom: verticalScale(15),
+    right: I18nManager.isRTL ? scale(10) : null,
+    left: I18nManager.isRTL ? null : scale(10),
+    borderRadius: scale(15),
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(5),
     alignItems: "flex-start",
   },
   priceText: {
-    fontSize: 17,
+    fontSize: moderateScale(17),
     fontWeight: "bold",
-    color: "black",
     color: "#1A2540",
   },
   quantityInput: {
-    width: 50, // Adjust width to balance between buttons
-    height: 30, // Reduce height for better fit within the container
+    width: scale(50),
+    height: verticalScale(30),
     textAlign: "center",
     borderWidth: 1,
     borderColor: "white",
-    borderRadius: 5,
-    fontSize: 16,
+    borderRadius: scale(5),
+    fontSize: moderateScale(16),
     fontWeight: "bold",
     color: "#000",
     backgroundColor: "#fff",
-    marginHorizontal: 5, // Space between the input and buttons
+    marginHorizontal: scale(5),
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeArea: {
+    position: "absolute",
+    top: 40,
+    right: I18nManager.isRTL ? 20 : null,
+    left: I18nManager.isRTL ? null : 20,
+    padding: 10,
+  },
+  imageContainer: {
+    width: "90%",
+    height: "80%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "100%",
+    height: "100%",
   },
 });

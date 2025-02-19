@@ -110,9 +110,9 @@ const styles = StyleSheet.create({
     textAlign: I18nManager.isRTL ? "left" : "right", // Align the text to the right
     alignItems: "center",
     justifyContent: "center",
-    color: "#BDC3C7", // Set a color for the text
-    fontSize: 18,
-    paddingRight: 10,
+    fontSize: 14,
+    color: "#7C7C7C",
+    fontWeight: "bold",
   },
   icon: {
     color: "#7C7C7C",
