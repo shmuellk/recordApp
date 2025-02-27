@@ -32,6 +32,7 @@ const moderateScale = (size, factor = 0.5) =>
 
 const ArmorScreen = ({ navigation, route }) => {
   const [quantities, setQuantities] = useState([]);
+  const [quantitieToBy, setQuantitieToBy] = useState([]);
   const [isEmpty, SetIsEmpty] = useState(false);
   const { userData } = route.params;
   const [armorsItems, setArmorsItems] = useState([]);
@@ -98,6 +99,12 @@ const ArmorScreen = ({ navigation, route }) => {
             amount: item.amount,
           }));
           setQuantities(updatedQuantities);
+
+          const resetQuantities = transformedData.map((item) => ({
+            id: item.id,
+            amount: 1,
+          }));
+          setQuantitieToBy(resetQuantities);
           SetIsEmpty(false);
         } catch (error) {
           console.error("Failed to load cart items:", error);
@@ -112,6 +119,25 @@ const ArmorScreen = ({ navigation, route }) => {
   );
 
   const increment = (id) => {
+    setQuantitieToBy((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          const item = armorsItems.find((item) => item.id === id);
+          const maxQuantity = item ? item.quantity : 1;
+
+          if (q.amount + 1 > maxQuantity) {
+            showPopup(`הגעת לכמות המקסימלית של ${maxQuantity} יחידות.`);
+            return { ...q, amount: maxQuantity };
+          }
+
+          return { ...q, amount: q.amount + 1 };
+        }
+        return q;
+      })
+    );
+  };
+
+  const incrementAMOUNT = (id) => {
     setQuantities((prevAmount) =>
       prevAmount.map((q) => {
         if (q.id === id) {
@@ -122,8 +148,22 @@ const ArmorScreen = ({ navigation, route }) => {
     );
   };
 
-  const decrement = (id) => {
+  const decrementAMOUNT = (id) => {
     setQuantities((prevAmount) =>
+      prevAmount.map((q) => {
+        if (q.id === id) {
+          return {
+            ...q,
+            amount: q.amount - 1 > 0 ? q.amount - 1 : 1,
+          };
+        }
+        return q;
+      })
+    );
+  };
+
+  const decrement = (id) => {
+    setQuantitieToBy((prevAmount) =>
       prevAmount.map((q) => {
         if (q.id === id) {
           return {
@@ -180,21 +220,41 @@ const ArmorScreen = ({ navigation, route }) => {
         status: "ADD",
       });
 
+      handleRemovFromArmors(itemId, itemSKU);
+
       showPopup("הפריט נוסף לעגלה!");
 
       setArmorsItems((prevArmorsItems) =>
-        prevArmorsItems.map((item) =>
-          item.id === itemId ? { ...item, amount: 1 } : item
-        )
+        prevArmorsItems.filter((item) => item.id !== itemId)
       );
 
-      setQuantities((prevQuantities) =>
+      setQuantitieToBy((prevQuantities) =>
         prevQuantities.map((q) => (q.id === itemId ? { ...q, amount: 1 } : q))
       );
     } catch (e) {
       console.log("Failed to update item:", e);
     } finally {
       setAddItemToCart((prev) => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handleUpdateArmor = async (itemId, itemSKU, newQuantity) => {
+    try {
+      await armorModle.updateArmorsList({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+        item_code: itemSKU,
+        amountToArmor: newQuantity,
+      });
+    } catch (e) {
+      console.log("Failed to update item:", e);
+    } finally {
+      setArmorsItems((prevArmorItems) =>
+        prevArmorItems.map((item) =>
+          item.id === itemId ? { ...item, amount: newQuantity } : item
+        )
+      );
+      showPopup("הפריט עודכן בהצלחה!");
     }
   };
 
@@ -210,13 +270,42 @@ const ArmorScreen = ({ navigation, route }) => {
     }
 
     const handleQuantityChange = (text, id) => {
-      // Allow only numbers
+      // השארת ספרות בלבד
+      const numericValue = text.replace(/[^0-9]/g, "");
+
+      setQuantitieToBy((prevQuantities) =>
+        prevQuantities.map((q) => {
+          if (q.id === id) {
+            const item = armorsItems.find((item) => item.id === id);
+            const maxQuantity = item ? item.quantity : 1;
+
+            // המרת הערך המספרי ובדיקת גבול המלאי
+            let newQuantity =
+              !numericValue || parseInt(numericValue, 10) === 0
+                ? 1
+                : parseInt(numericValue, 10);
+
+            // הגבלת הכמות למקסימום הזמין
+            if (newQuantity > maxQuantity) {
+              showPopup(`הגעת לכמות המקסימלית של ${maxQuantity} יחידות.`);
+              newQuantity = maxQuantity;
+            }
+
+            return { ...q, amount: newQuantity };
+          }
+          return q;
+        })
+      );
+    };
+
+    const handleAMOUNTChange = (text, id) => {
+      // השארת ספרות בלבד
       const numericValue = text.replace(/[^0-9]/g, "");
 
       setQuantities((prevQuantities) =>
         prevQuantities.map((q) => {
           if (q.id === id) {
-            const newQuantity =
+            let newQuantity =
               !numericValue || parseInt(numericValue, 10) === 0
                 ? 1
                 : parseInt(numericValue, 10);
@@ -230,12 +319,20 @@ const ArmorScreen = ({ navigation, route }) => {
     const foundQuantity = quantities.find((q) => q.id === item.id);
     const amount = foundQuantity ? foundQuantity.amount : item.amount;
 
+    const foundquantitieToBy = quantitieToBy.find((q) => q.id === item.id);
+    const amountToBy = foundquantitieToBy
+      ? foundquantitieToBy.amount
+      : item.amount;
+
     const handleRemoveItemClick = () => {
       handleRemovFromArmors(item.id, item.SKU);
     };
 
     const handleUpdateItemClick = () => {
-      handleAddItemToCart(item.id, item.SKU, amount);
+      handleAddItemToCart(item.id, item.SKU, amountToBy);
+    };
+    const handleUpdateArmorClick = () => {
+      handleUpdateArmor(item.id, item.SKU, amount);
     };
 
     return (
@@ -274,16 +371,30 @@ const ArmorScreen = ({ navigation, route }) => {
                 }}
               >
                 <Text style={Cardstyles.infoTitle}>במלאי : </Text>
-                {item.amount > 0 ? (
+                {item.quantity > 0 ? (
                   <Image
-                    style={{ alignSelf: "center" }}
+                    style={{
+                      alignSelf: "center",
+                      marginLeft: I18nManager.isRTL ? null : 20,
+                      marginRight: I18nManager.isRTL ? 20 : null,
+                    }}
                     source={require("../assets/icons/armorIcons/Green_v.png")}
                   />
                 ) : (
                   <Image
-                    style={{ alignSelf: "center" }}
+                    style={{
+                      alignSelf: "center",
+                      marginLeft: I18nManager.isRTL ? null : 20,
+                      marginRight: I18nManager.isRTL ? 20 : null,
+                    }}
                     source={require("../assets/icons/armorIcons/Red_x.png")}
                   />
+                )}
+                {item.quantity > 0 && (
+                  <>
+                    <Text style={Cardstyles.infoTitle}>שוריין : </Text>
+                    <Text style={Cardstyles.infoText}>{item.amount}</Text>
+                  </>
                 )}
               </View>
             </View>
@@ -308,30 +419,33 @@ const ArmorScreen = ({ navigation, route }) => {
         </View>
 
         <View style={Cardstyles.amoutAndPriceView}>
-          <View style={Cardstyles.orderQuantity}>
-            <TouchableOpacity
-              onPress={() => decrement(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Minus.png")} />
-            </TouchableOpacity>
+          {item.quantity > 0 && (
+            <View style={Cardstyles.orderQuantity}>
+              <TouchableOpacity
+                onPress={() => decrement(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+              </TouchableOpacity>
 
-            <TextInput
-              style={Cardstyles.quantityInput}
-              value={amount.toString()}
-              onChangeText={(text) => handleQuantityChange(text, item.id)}
-              keyboardType="numeric"
-              selectTextOnFocus={true}
-            />
+              <TextInput
+                style={Cardstyles.quantityInput}
+                value={amountToBy.toString()}
+                onChangeText={(text) => handleQuantityChange(text, item.id)}
+                keyboardType="numeric"
+                selectTextOnFocus={true}
+              />
 
-            <TouchableOpacity
-              onPress={() => increment(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Plus.png")} />
-            </TouchableOpacity>
-          </View>
-          {item.amount > 0 && (
+              <TouchableOpacity
+                onPress={() => increment(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {item.quantity > 0 && (
             <View
               style={{
                 paddingLeft: I18nManager.isRTL ? scale(10) : null,
@@ -363,6 +477,53 @@ const ArmorScreen = ({ navigation, route }) => {
                   >
                     הוסף לעגלה
                   </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+          {item.quantity <= 0 && (
+            <View style={Cardstyles.orderQuantity}>
+              <TouchableOpacity
+                onPress={() => decrementAMOUNT(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+              </TouchableOpacity>
+
+              <TextInput
+                style={Cardstyles.quantityInput}
+                value={amount.toString()}
+                onChangeText={(text) => handleAMOUNTChange(text, item.id)}
+                keyboardType="numeric"
+                selectTextOnFocus={true}
+              />
+
+              <TouchableOpacity
+                onPress={() => incrementAMOUNT(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+              </TouchableOpacity>
+            </View>
+          )}
+          {item.quantity <= 0 && item.amount != amount && (
+            <View style={Cardstyles.removeButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  Cardstyles.removeButton,
+                  {
+                    backgroundColor: "#45f248",
+                    marginRight: I18nManager.isRTL ? 10 : null,
+                    marginLeft: I18nManager.isRTL ? null : 10,
+                  },
+                ]}
+                onPress={handleUpdateArmorClick}
+                disabled={!!removingItem[item.id]}
+              >
+                {removingItem[item.id] ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={Cardstyles.removeButtonText}>עדכן</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -455,6 +616,7 @@ const ArmorScreen = ({ navigation, route }) => {
                     <View style={styles.ItemsSeparator} />
                   )}
                   showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: verticalScale(100) }}
                 />
               )}
             </View>
@@ -563,7 +725,8 @@ const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
     width: width, // full screen width; adjust if needed
-    height: verticalScale(200),
+    // height: verticalScale(200),
+
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
   },
@@ -612,6 +775,8 @@ const Cardstyles = StyleSheet.create({
   image: {
     width: scale(130),
     height: scale(130),
+    left: I18nManager.isRTL ? null : 15,
+    right: I18nManager.isRTL ? 15 : null,
     resizeMode: "contain",
   },
   orderQuantity: {

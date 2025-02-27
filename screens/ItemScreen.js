@@ -359,6 +359,21 @@ const ItemScreen = ({ navigation, route }) => {
     ProdactsByCHILD_GROUP();
   }, [selectedCHILD_GROUP]);
 
+  const balanceColumns = (data) => {
+    const column1 = [];
+    const column2 = [];
+
+    data.forEach((item, index) => {
+      if (index % 2 === 0) {
+        column1.push(item);
+      } else {
+        column2.push(item);
+      }
+    });
+
+    return [column1, column2];
+  };
+
   const renderWhatsappUser = (item) => {
     return (
       <TouchableOpacity onPress={() => openWhatsApp(`${item.phone}`)}>
@@ -395,7 +410,7 @@ const ItemScreen = ({ navigation, route }) => {
   };
 
   // חלוקת הנתונים לעמודות: בכל עמודה עד 3 פריטים
-  const columns = chunkData(whatsappData, 3);
+  const columns = balanceColumns(whatsappData);
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
@@ -595,7 +610,7 @@ const ItemScreen = ({ navigation, route }) => {
 
                   <FlatList
                     data={columns} // מערך העמודות
-                    horizontal
+                    numColumns={2} // שתי שורות
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={(_, index) => index.toString()}
                     renderItem={({ item: columnItems }) => (
@@ -889,7 +904,7 @@ const styles = StyleSheet.create({
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: 3,
   },
   iconContainer: {
     // backgroundColor: "#EBEDF5",
@@ -899,9 +914,6 @@ const styles = StyleSheet.create({
   column: {
     marginHorizontal: width * 0.001,
     justifyContent: "flex-start",
-  },
-  item: {
-    marginBottom: 10,
   },
   phonsNumView: {
     flex: 2.5,

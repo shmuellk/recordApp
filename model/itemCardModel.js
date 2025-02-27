@@ -112,9 +112,10 @@ const getAlternativeSkus = async (data) => {
 
       // Split the string, clean the data, and map it to objects
       const alternativeSkusArray = alternativeSkusString
-        .split(",") // Split by commas
-        .filter((sku) => sku.trim() !== "") // Remove empty strings
-        .map((sku) => ({ SKU: sku.trim() })); // Map to objects with key 'SKU'
+        .split(",") // פיצול לפי פסיקים
+        .filter((sku) => sku.trim() !== "") // הסרת ערכים ריקים
+        .map((sku) => ({ SKU: sku.trim() })) // מיפוי לאובייקט
+        .sort((a, b) => a.SKU.localeCompare(b.SKU)); // מיון אלפביתי
       return alternativeSkusArray;
     } else {
       console.error("Unexpected status code:", response.status);

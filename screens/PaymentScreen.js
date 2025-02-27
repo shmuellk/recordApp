@@ -35,6 +35,7 @@ const PaymentScreen = ({ navigation, route }) => {
   const [deliveryList, setDeliveryList] = useState([]);
   const [exitTime, setExitTime] = useState("");
   const [exitDate, setExitDate] = useState("");
+  const [cart, setCart] = useState([]);
   const phoneInputRef = useRef(null);
 
   const numericValue = parseFloat(totalPrice.replace(/[^\d.]/g, ""));
@@ -61,6 +62,44 @@ const PaymentScreen = ({ navigation, route }) => {
       setDeliveryList(deliveryNames);
     };
     fetchDeliveryList();
+  }, []);
+
+  useEffect(() => {
+    const fetchcartList = async () => {
+      const data = await cartModel.getCartList({
+        userName: userData.U_USER_NAME,
+        cardCode: userData.U_CARD_CODE,
+      });
+
+      console.log("====================================");
+      console.log("cartList: " + JSON.stringify(data));
+      console.log("====================================");
+
+      const formattedData = {
+        CardCode: userData.U_CARD_CODE,
+        Comments: notes,
+        U_Order_Rec_shiptype: deliveryMethod,
+        U_Order_Rec_Name: name,
+        U_Order_Rec_Phone: phone,
+        Rows: data.map((item) => ({
+          ItemCode: item.ITEMCODE,
+          Quantity: parseFloat(item.QUANTITY),
+          Price: item.NET_PRICE
+            ? parseFloat(item.NET_PRICE.replace("₪", ""))
+            : item.GROSS_PRICE
+            ? parseFloat(item.GROSS_PRICE.replace("₪", "")) / 2
+            : 0,
+        })),
+      };
+
+      console.log("====================================");
+      console.log("Formatted Order: " + JSON.stringify(formattedData));
+      console.log("====================================");
+
+      setCart(formattedData);
+    };
+
+    fetchcartList();
   }, []);
 
   useEffect(() => {

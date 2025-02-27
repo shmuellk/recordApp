@@ -47,6 +47,7 @@ const TabNavigator = ({ route }) => {
 
   return (
     <Tab.Navigator
+      initialRouteName="Search" // קביעת המסך הראשי
       screenOptions={({ route }) => ({
         headerShown: false,
         unmountOnBlur: false,

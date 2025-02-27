@@ -118,6 +118,14 @@ const FavoritsScreen = ({ navigation, route }) => {
     setQuantities((prevAmount) =>
       prevAmount.map((q) => {
         if (q.id === id) {
+          const item = favoritsItems.find((item) => item.id === id);
+          const maxQuantity = item ? item.quantity : 1;
+
+          if (q.amount + 1 > maxQuantity) {
+            showPopup(`הגעת לכמות המקסימלית של ${maxQuantity} יחידות.`);
+            return { ...q, amount: maxQuantity };
+          }
+
           return { ...q, amount: q.amount + 1 };
         }
         return q;
@@ -210,16 +218,23 @@ const FavoritsScreen = ({ navigation, route }) => {
     }
 
     const handleQuantityChange = (text, id) => {
-      // Keep only numbers
+      // שמירת ערכים נומריים בלבד
       const numericValue = text.replace(/[^0-9]/g, "");
 
       setQuantities((prevQuantities) =>
         prevQuantities.map((q) => {
           if (q.id === id) {
-            const newQuantity =
-              !numericValue || parseInt(numericValue, 10) === 0
-                ? 1
-                : parseInt(numericValue, 10);
+            const item = favoritsItems.find((item) => item.id === id);
+            const maxQuantity = item ? item.quantity : 1;
+
+            // המרת טקסט למספר ובדיקת הגבול
+            const newQuantity = parseInt(numericValue, 10) || 1;
+
+            if (newQuantity > maxQuantity) {
+              showPopup(`הגעת לכמות המקסימלית של ${maxQuantity} יחידות.`);
+              return { ...q, amount: maxQuantity };
+            }
+
             return { ...q, amount: newQuantity };
           }
           return q;

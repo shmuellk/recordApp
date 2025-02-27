@@ -94,6 +94,9 @@ const CartScreen = ({ navigation, route }) => {
             image: item.IMAGE,
             SKU: item.ITEMCODE,
             quantity: item.QUANTITY,
+            amount: item.AMOUNT,
+            year: item.FROM_YEAR + "-" + item.UNTIL_YEAR,
+            capacity: item.CAPACITY,
           }));
           setCartItems(transformedData);
           const updatedQuantities = transformedData.map((item) => ({
@@ -118,7 +121,18 @@ const CartScreen = ({ navigation, route }) => {
     setQuantities((prevQuantities) =>
       prevQuantities.map((q) => {
         if (q.id === id) {
-          return { ...q, quantity: q.quantity + 1 };
+          // מציאת הפריט הנוכחי כדי לבדוק את המקסימום
+          const currentItem = cartItems.find((item) => item.id === id);
+          const maxAmount = currentItem ? currentItem.amount : Infinity;
+
+          // הגדלת הכמות רק אם היא קטנה מהמקסימום
+          const newQuantity = q.quantity + 1;
+          if (newQuantity <= maxAmount) {
+            return { ...q, quantity: newQuantity };
+          } else {
+            showPopup(`הגעת לכמות המקסימלית של ${maxAmount} יחידות.`);
+            return q; // אם הגענו למקסימום, לא לשנות את הכמות
+          }
         }
         return q;
       })
@@ -142,28 +156,31 @@ const CartScreen = ({ navigation, route }) => {
   const calculateTotalPrice = () => {
     let total = 0;
 
-    // Loop through each cart item:
+    // לולאה על כל פריט בעגלה
     cartItems.forEach((item) => {
-      // Find this item's quantity from state
-      const foundQuantity = quantities.find((q) => q.id === item.id);
-      const quantity = foundQuantity ? foundQuantity.quantity : item.quantity;
+      const maxAmount = item.amount || 0; // בדיקת המלאי של הפריט
+      if (maxAmount > 0) {
+        // חיפוש הכמות הנוכחית מה-state
+        const foundQuantity = quantities.find((q) => q.id === item.id);
+        const quantity = foundQuantity ? foundQuantity.quantity : item.quantity;
 
-      // Parse net_price (remove any '₪' or commas), fallback to 0 if invalid
-      let netPrice =
-        parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
+        // ניקוי והמרת מחיר נטו
+        let netPrice =
+          parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
 
-      // If net_price is 0 or missing, use gross_price / 2
-      if (!netPrice || netPrice === 0) {
-        const grossPrice =
-          parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
-        netPrice = grossPrice / 2;
+        // אם אין מחיר נטו, נשתמש במחיר ברוטו לחלק ל-2
+        if (netPrice === 0) {
+          const grossPrice =
+            parseFloat(String(item.gross_price).replace(/[^\d.]/g, "")) || 0;
+          netPrice = grossPrice / 2;
+        }
+
+        // חישוב והוספה לסכום הכללי
+        total += netPrice * quantity;
       }
-
-      // Sum up: netPrice * quantity
-      total += netPrice * quantity;
     });
 
-    // Return formatted string
+    // החזרת המחיר הסופי בפורמט מתאים
     return "₪ " + total.toFixed(2);
   };
   const hendelOnClick = () => {
@@ -233,6 +250,9 @@ const CartScreen = ({ navigation, route }) => {
   };
 
   const renderItem = ({ item }) => {
+    console.log("====================================");
+    console.log(JSON.stringify(item));
+    console.log("====================================");
     const netPriceNumber =
       parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
     const grossPriceNumber =
@@ -248,10 +268,20 @@ const CartScreen = ({ navigation, route }) => {
         prevQuantities.map((q) => {
           if (q.id === id) {
             // בדיקה אם הערך ריק או שווה ל-0
-            const newQuantity =
+            let newQuantity =
               !numericValue || parseInt(numericValue, 10) === 0
                 ? 1
                 : parseInt(numericValue, 10);
+
+            // מציאת הפריט הנוכחי כדי לבדוק את המקסימום
+            const currentItem = cartItems.find((item) => item.id === id);
+            const maxAmount = currentItem ? currentItem.amount : Infinity;
+
+            // הגבלת הכמות למקסימום המותר
+            if (newQuantity > maxAmount) {
+              showPopup(`הגעת לכמות המקסימלית של ${maxAmount} יחידות.`);
+              newQuantity = maxAmount;
+            }
 
             return {
               ...q,
@@ -264,6 +294,7 @@ const CartScreen = ({ navigation, route }) => {
     };
     const foundQuantity = quantities.find((q) => q.id === item.id);
     const quantity = foundQuantity ? foundQuantity.quantity : item.quantity;
+    const maxAmount = item.amount || 0;
 
     const handleRemoveItemClick = () => {
       handleRemovFromCart(item.id, item.SKU);
@@ -272,138 +303,218 @@ const CartScreen = ({ navigation, route }) => {
     const handleUpdateItemClick = () => {
       handleUpdateFromCart(item.id, item.SKU, quantity);
     };
-
-    return (
-      <View style={Cardstyles.card}>
-        <View style={Cardstyles.itemDataView}>
-          <View style={Cardstyles.textData}>
-            <Text style={Cardstyles.haderText}>{item.name}</Text>
-            <View style={Cardstyles.infoView}>
-              <View style={Cardstyles.leftText}>
-                <Text style={Cardstyles.infoText}>{item.carName}</Text>
+    if (maxAmount > 0) {
+      return (
+        <View style={Cardstyles.card}>
+          <View style={Cardstyles.itemDataView}>
+            <View style={Cardstyles.textData}>
+              <Text style={Cardstyles.haderText}>{item.name}</Text>
+              <View style={Cardstyles.infoView}>
+                <View style={Cardstyles.leftText}>
+                  <Text style={Cardstyles.infoText}>
+                    {item.carName} | {item.year}
+                    {item.capacity ? ` | נפח: ${item.capacity}` : ""}
+                  </Text>
+                </View>
+              </View>
+              <View>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  }}
+                >
+                  <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
+                  <Text style={Cardstyles.infoText}>{item.SKU}</Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  }}
+                >
+                  <Text style={Cardstyles.infoTitle}>מותג : </Text>
+                  <Text style={Cardstyles.infoText}>{item.brand}</Text>
+                </View>
               </View>
             </View>
-            <View>
-              <View
-                style={{
-                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+            <View style={Cardstyles.imageData}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedImage(
+                    `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`
+                  );
+                  setIsModalVisible(true);
                 }}
               >
-                <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
-                <Text style={Cardstyles.infoText}>{item.SKU}</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                }}
-              >
-                <Text style={Cardstyles.infoTitle}>מותג : </Text>
-                <Text style={Cardstyles.infoText}>{item.brand}</Text>
-              </View>
-            </View>
-          </View>
-          <View style={Cardstyles.imageData}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedImage(
-                  `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`
-                );
-                setIsModalVisible(true);
-              }}
-            >
-              <Image
-                style={Cardstyles.image}
-                source={{
-                  uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
-                }}
-              />
-            </TouchableOpacity>
-            <View style={Cardstyles.priceView}>
+                <Image
+                  style={Cardstyles.image}
+                  source={{
+                    uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+                  }}
+                />
+              </TouchableOpacity>
               <View style={Cardstyles.priceView}>
-                <Text style={Cardstyles.priceText}>X {quantity}</Text>
-                {/* show '₪ ...' plus the decided price */}
-                <Text style={Cardstyles.priceText}>
-                  ₪ {displayPrice.toFixed(2)}
-                </Text>
+                <View style={Cardstyles.priceView}>
+                  <Text style={Cardstyles.priceText}>X {quantity}</Text>
+                  {/* show '₪ ...' plus the decided price */}
+                  <Text style={Cardstyles.priceText}>
+                    ₪ {displayPrice.toFixed(2)}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        <View style={Cardstyles.amoutAndPriceView}>
-          <View style={Cardstyles.orderQuantity}>
-            <TouchableOpacity
-              onPress={() => decrement(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Minus.png")} />
-            </TouchableOpacity>
+          <View style={Cardstyles.amoutAndPriceView}>
+            <View style={Cardstyles.orderQuantity}>
+              <TouchableOpacity
+                onPress={() => decrement(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+              </TouchableOpacity>
 
-            <TextInput
-              style={Cardstyles.quantityInput}
-              value={quantity.toString()}
-              onChangeText={(text) => handleQuantityChange(text, item.id)}
-              keyboardType="numeric"
-              selectTextOnFocus={true}
-            />
+              <TextInput
+                style={Cardstyles.quantityInput}
+                value={quantity.toString()}
+                onChangeText={(text) => handleQuantityChange(text, item.id)}
+                keyboardType="numeric"
+                selectTextOnFocus={true}
+              />
 
-            <TouchableOpacity
-              onPress={() => increment(item.id)}
-              style={Cardstyles.button}
-            >
-              <Image source={require("../assets/icons/itemCard/Plus.png")} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => increment(item.id)}
+                style={Cardstyles.button}
+              >
+                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+              </TouchableOpacity>
+            </View>
+            {quantity == item.quantity ? (
+              <View style={Cardstyles.removeButtonContainer}>
+                <TouchableOpacity
+                  style={Cardstyles.removeButton}
+                  onPress={handleRemoveItemClick}
+                  disabled={!!removingItem[item.id]}
+                >
+                  {removingItem[item.id] ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text style={Cardstyles.removeButtonText}>הסר</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={Cardstyles.removeButtonContainer}>
+                <TouchableOpacity
+                  style={[
+                    Cardstyles.removeButton,
+                    {
+                      backgroundColor: "#45f248",
+                      marginRight: I18nManager.isRTL ? 10 : null,
+                      marginLeft: I18nManager.isRTL ? null : 10,
+                    },
+                  ]}
+                  onPress={handleUpdateItemClick}
+                  disabled={!!updatingItem[item.id]} // הטעינה רק לפריט הזה
+                >
+                  {updatingItem[item.id] ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text style={Cardstyles.removeButtonText}>עדכן</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={Cardstyles.removeButton}
+                  onPress={handleRemoveItemClick}
+                  disabled={!!removingItem[item.id]}
+                >
+                  {removingItem[item.id] ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text style={Cardstyles.removeButtonText}>הסר</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-          {quantity == item.quantity ? (
-            <View style={Cardstyles.removeButtonContainer}>
-              <TouchableOpacity
-                style={Cardstyles.removeButton}
-                onPress={handleRemoveItemClick}
-                disabled={!!removingItem[item.id]}
-              >
-                {removingItem[item.id] ? (
-                  <ActivityIndicator color="#000" />
-                ) : (
-                  <Text style={Cardstyles.removeButtonText}>הסר</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={Cardstyles.removeButtonContainer}>
-              <TouchableOpacity
-                style={[
-                  Cardstyles.removeButton,
-                  {
-                    backgroundColor: "#45f248",
-                    marginRight: I18nManager.isRTL ? 10 : null,
-                    marginLeft: I18nManager.isRTL ? null : 10,
-                  },
-                ]}
-                onPress={handleUpdateItemClick}
-                disabled={!!updatingItem[item.id]} // הטעינה רק לפריט הזה
-              >
-                {updatingItem[item.id] ? (
-                  <ActivityIndicator color="#000" />
-                ) : (
-                  <Text style={Cardstyles.removeButtonText}>עדכן</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={Cardstyles.removeButton}
-                onPress={handleRemoveItemClick}
-                disabled={!!removingItem[item.id]}
-              >
-                {removingItem[item.id] ? (
-                  <ActivityIndicator color="#000" />
-                ) : (
-                  <Text style={Cardstyles.removeButtonText}>הסר</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
-      </View>
-    );
+      );
+    } else {
+      return (
+        <View style={Cardstyles.card}>
+          <View style={Cardstyles.itemDataView}>
+            <View style={Cardstyles.textData}>
+              <Text style={Cardstyles.haderText}>{item.name}</Text>
+              <View style={Cardstyles.infoView}>
+                <View style={Cardstyles.leftText}>
+                  <Text style={Cardstyles.infoText}>{item.carName}</Text>
+                </View>
+              </View>
+              <View>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  }}
+                >
+                  <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
+                  <Text style={Cardstyles.infoText}>{item.SKU}</Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  }}
+                >
+                  <Text style={Cardstyles.infoTitle}>מותג : </Text>
+                  <Text style={Cardstyles.infoText}>{item.brand}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={Cardstyles.imageData}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedImage(
+                    `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`
+                  );
+                  setIsModalVisible(true);
+                }}
+              >
+                <Image
+                  style={Cardstyles.image}
+                  source={{
+                    uri: `http://app.record.a-zuzit.co.il:8085/media/${item.image}.jpg?timestamp=${timestamp}`,
+                  }}
+                />
+              </TouchableOpacity>
+              <View style={Cardstyles.priceView}>
+                <View style={Cardstyles.priceView}>
+                  <Text style={Cardstyles.priceText}>X {quantity}</Text>
+                  {/* show '₪ ...' plus the decided price */}
+                  <Text style={Cardstyles.priceText}>
+                    ₪ {displayPrice.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={Cardstyles.amoutAndPriceView}>
+            <Text style={Cardstyles.amoutText}>הפריט אינו במלאי</Text>
+            <View style={Cardstyles.removeButtonContainer}>
+              <TouchableOpacity
+                style={Cardstyles.removeButton}
+                onPress={handleRemoveItemClick}
+                disabled={!!removingItem[item.id]}
+              >
+                {removingItem[item.id] ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={Cardstyles.removeButtonText}>הסר</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      );
+    }
   };
   console.log("====================================");
   console.log("isEmpty: " + isEmpty);
@@ -636,6 +747,17 @@ const Cardstyles = StyleSheet.create({
     fontSize: moderateScale(17),
     fontWeight: "bold",
     color: "#1A2540",
+    alignContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  amoutText: {
+    fontSize: moderateScale(17),
+    fontWeight: "bold",
+    color: "#ED2027",
+    alignContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
   },
   quantityInput: {
     width: scale(50),

@@ -41,10 +41,9 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
 
         {data[0] && (
           <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderCell}>תאריך</Text>
-            <Text style={styles.tableHeaderCell}>כמות</Text>
-            <Text style={styles.tableHeaderCell}>מחיר ברוטו</Text>
             <Text style={styles.tableHeaderCell}>מחיר נטו</Text>
+            <Text style={styles.tableHeaderCell}>כמות</Text>
+            <Text style={styles.tableHeaderCell}>תאריך</Text>
           </View>
         )}
         {data[0] && (
@@ -60,7 +59,7 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {item.DOCDATE ? item.DOCDATE.split("T")[0] : ""}
+                  {item.NETPRICE}
                 </Text>
                 <Text
                   style={styles.tableCell}
@@ -74,14 +73,7 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {item.PRICEBEFDI}
-                </Text>
-                <Text
-                  style={styles.tableCell}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {item.NETPRICE}
+                  {item.DOCDATE ? item.DOCDATE.split("T")[0] : ""}
                 </Text>
               </View>
             )}

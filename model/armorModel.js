@@ -53,9 +53,44 @@ const addItemToArmors = async (data) => {
   }
 };
 
+const updateArmorsList = async (data) => {
+  const userName = data.userName ? data.userName : "";
+  const cardCode = data.cardCode ? data.cardCode : "";
+  const item_code = data.item_code ? data.item_code : "";
+  const amountToArmor = data.amountToArmor ? data.amountToArmor : "";
+
+  console.log("====================================");
+  console.log("userName: " + userName);
+  console.log("cardCode: " + cardCode);
+  console.log("item_code: " + item_code);
+  console.log("amountToArmor: " + amountToArmor);
+  console.log("====================================");
+
+  try {
+    const response = await axios.get(`${IP}/armor/updateArmorsList`, {
+      params: {
+        userName,
+        cardCode,
+        item_code,
+        amountToArmor,
+      },
+    });
+
+    if (response.status === 200) {
+      return [];
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error during login request:", error);
+    return [];
+  }
+};
 const cartModel = {
   getArmorsList,
   addItemToArmors,
+  updateArmorsList,
 };
 
 export default cartModel;

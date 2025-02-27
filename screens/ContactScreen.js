@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Linking,
   FlatList,
+  Alert,
   I18nManager,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -51,7 +52,7 @@ const ContactScreen = ({ navigation }) => {
   const renderWhatsappUser = (item) => {
     return (
       <TouchableOpacity onPress={() => openPhoneCall(`${item.phone}`)}>
-        <View style={styles.addresViewText}>
+        <View style={styles.whatsappViewText}>
           <View style={styles.iconContainer}>
             <Icon2 name="phone" size={scale(28)} color="#d01117" />
           </View>
@@ -80,30 +81,43 @@ const ContactScreen = ({ navigation }) => {
   const handleOpenMail = async () => {
     const email = "info@record.co.il";
     const url = `mailto:${email}`;
+
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
       } else {
-        alert("מייל לא נתמך במכשיר זה");
+        Alert.alert('לא נמצאו אפליקציות דוא"ל נתמכות במכשיר זה.');
       }
     } catch (error) {
       console.error("Error opening email", error);
-      alert("התרחשה שגיאה בפתיחת המייל");
+      Alert.alert("התרחשה שגיאה בפתיחת המייל.");
     }
   };
 
   const handleOpenWaze = async () => {
-    const url = "https://waze.com/ul/hsv8wpvqbs";
+    const latitude = 32.021002; // הכנס את קו הרוחב של היעד
+    const longitude = 34.802772; // הכנס את קו האורך של היעד
+    const label = "הסדן 7 חולון";
+
+    const url = `geo:${latitude},${longitude}?q=${encodeURIComponent(label)}`;
+
     try {
-      await Linking.openURL(url);
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        // ניסיון להשתמש בקישור אוניברסלי אם פרוטוקול geo לא נתמך
+        const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        await Linking.openURL(fallbackUrl);
+      }
     } catch (error) {
-      alert("Waze לא הצליח להיפתח");
+      Alert.alert("לא ניתן לפתוח אפליקציית ניווט.");
     }
   };
 
   // Split the WhatsApp data into columns (each column contains up to 3 items)
-  const columns = chunkData(whatsappData, 3);
+  const columns = chunkData(whatsappData, 4);
 
   return (
     <View style={styles.container}>
@@ -181,6 +195,9 @@ const ContactScreen = ({ navigation }) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(_, index) => index.toString()}
+          contentContainerStyle={{
+            flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+          }}
           renderItem={({ item: columnItems, index }) => (
             <View key={index.toString()} style={styles.column}>
               {columnItems.map((user, userIndex) => (
@@ -277,6 +294,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
+  },
+  whatsappViewText: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignItems: "center",
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(3),
   },
   addresText: {
     marginLeft: I18nManager.isRTL ? scale(10) : null,

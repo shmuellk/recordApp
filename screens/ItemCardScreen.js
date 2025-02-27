@@ -135,12 +135,16 @@ const ItemCardScreen = ({ route, navigation }) => {
       setSearchLoading(false);
     }
   };
-
   const handleQuantityChange = (text) => {
-    if (!text || !text.length) {
-      setAmountToBy(1);
+    const value = parseInt(text, 10);
+
+    if (!value || value <= 0) {
+      setAmountToBy(1); // ברירת מחדל למינימום 1
+    } else if (value > Stock) {
+      setAmountToBy(Stock); // לא יאפשר מעבר מהמלאי
+      showPopup(`כמות מקסימלית היא ${Stock} יחידות.`);
     } else {
-      setAmountToBy(parseInt(text, 10));
+      setAmountToBy(value);
     }
   };
 
@@ -187,7 +191,14 @@ const ItemCardScreen = ({ route, navigation }) => {
   };
 
   const increment = () => {
-    setAmountToBy((prevQuantity) => prevQuantity + 1);
+    setAmountToBy((prevQuantity) => {
+      if (prevQuantity < Stock) {
+        return prevQuantity + 1;
+      } else {
+        showPopup(`הגעת לכמות המקסימלית של ${Stock} יחידות.`);
+        return prevQuantity;
+      }
+    });
   };
 
   const decrement = () => {
@@ -384,7 +395,7 @@ const ItemCardScreen = ({ route, navigation }) => {
                 <TextInput
                   style={styles.quantityInput}
                   value={amountToBy.toString()}
-                  onChangeText={(text) => handleQuantityChange(text, item.id)}
+                  onChangeText={(text) => handleQuantityChange(text)}
                   keyboardType="numeric"
                   selectTextOnFocus={true}
                 />
