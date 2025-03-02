@@ -4,29 +4,26 @@ import {
   StyleSheet,
   Dimensions,
   Text,
-  FlatList,
   I18nManager,
   Image,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
-import armorModle from "../model/armorModel";
+import PaymentModel from "../model/PaymentModel";
 import filterModel from "../model/filterModel";
 import SuccessPopup from "../components/SuccessPopup";
 import Filter from "../components/Filter2";
 import Button from "../components/Button";
+import usersModel from "../model/usersModel";
 
 const { width, height } = Dimensions.get("window");
 
 const PaymentScreen = ({ navigation, route }) => {
   const { userData, totalPrice } = route.params;
-  const [currentPopup, setCurrentPopup] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState(userData.U_SHIPTYPE);
@@ -36,7 +33,23 @@ const PaymentScreen = ({ navigation, route }) => {
   const [exitTime, setExitTime] = useState("");
   const [exitDate, setExitDate] = useState("");
   const [cart, setCart] = useState([]);
+  const [currentPopup, setCurrentPopup] = useState(null);
+  const [popupsQueue, setPopupsQueue] = useState([]);
   const phoneInputRef = useRef(null);
+  console.log("====================================");
+  console.log("userData : " + JSON.stringify(userData));
+  console.log("====================================");
+  useEffect(() => {
+    if (!currentPopup && popupsQueue.length > 0) {
+      // Take the first popup from the queue and show it
+      setCurrentPopup(popupsQueue[0]);
+    }
+  }, [popupsQueue, currentPopup]);
+
+  const showPopup = (text, color = "#28A745") => {
+    const popupId = Date.now();
+    setPopupsQueue((prevQueue) => [...prevQueue, { id: popupId, text, color }]);
+  };
 
   const numericValue = parseFloat(totalPrice.replace(/[^\d.]/g, ""));
   const maam = numericValue * 0.18;
@@ -49,7 +62,42 @@ const PaymentScreen = ({ navigation, route }) => {
   }
   const formattedTotalWithMaam = `₪ ${totalWithMaam.toFixed(2)}`;
 
-  const hendelOnClick = () => {};
+  const hendelOnClick = async () => {
+    try {
+      const response = await PaymentModel.postNewOrder(cart);
+      if (response) {
+      } else {
+        usersModel.sendFailureEmail({
+          cart: cart,
+          userData: userData.U_VIEW_NAME,
+        });
+      }
+    } catch (err) {
+      console.log("====================================");
+      console.log("error = " + err);
+      console.log("====================================");
+      usersModel.sendFailureEmail({
+        cart: cart,
+        userData: userData.U_VIEW_NAME,
+      });
+    } finally {
+      try {
+        const res = await cartModel.deleteItemFromCart(userData);
+        console.log("====================================");
+        console.log(res);
+        console.log("====================================");
+      } catch (error) {
+        console.log("====================================");
+        console.log("error = " + error);
+        console.log("====================================");
+      }
+      showPopup("ההזמנה בוצעה בהצלחה"); // Show popup first
+      setTimeout(() => {
+        navigation.navigate("Search", { userData: userData });
+      }, 2000); // 2-second delay to allow popup visibility
+    }
+  };
+
   const handlePopupDismiss = () => {
     setPopupsQueue((prevQueue) => prevQueue.slice(1));
     setCurrentPopup(null);
@@ -76,20 +124,25 @@ const PaymentScreen = ({ navigation, route }) => {
       console.log("====================================");
 
       const formattedData = {
-        CardCode: userData.U_CARD_CODE,
-        Comments: notes,
-        U_Order_Rec_shiptype: deliveryMethod,
-        U_Order_Rec_Name: name,
-        U_Order_Rec_Phone: phone,
-        Rows: data.map((item) => ({
-          ItemCode: item.ITEMCODE,
-          Quantity: parseFloat(item.QUANTITY),
-          Price: item.NET_PRICE
-            ? parseFloat(item.NET_PRICE.replace("₪", ""))
-            : item.GROSS_PRICE
-            ? parseFloat(item.GROSS_PRICE.replace("₪", "")) / 2
-            : 0,
-        })),
+        RequestId: "1",
+        Orders: [
+          {
+            CardCode: userData.U_CARD_CODE,
+            Comments: notes,
+            U_Ordr_Rec_Name: name,
+            U_Ordr_Rec_Phone: phone,
+            U_Ordr_Rec_shiptype: deliveryMethod,
+            Rows: data.map((item) => ({
+              ItemCode: item.ITEMCODE,
+              Quantity: parseFloat(item.QUANTITY),
+              Price: item.NET_PRICE
+                ? parseFloat(item.NET_PRICE.replace("₪", ""))
+                : item.GROSS_PRICE
+                ? parseFloat(item.GROSS_PRICE.replace("₪", "")) / 2
+                : 0,
+            })),
+          },
+        ],
       };
 
       console.log("====================================");
@@ -101,6 +154,24 @@ const PaymentScreen = ({ navigation, route }) => {
 
     fetchcartList();
   }, []);
+
+  useEffect(() => {
+    setCart((prevCart) => {
+      if (!prevCart || !prevCart.Orders || prevCart.Orders.length === 0)
+        return prevCart;
+
+      // Update the first order with new values
+      const updatedOrders = prevCart.Orders.map((order) => ({
+        ...order,
+        U_Ordr_Rec_Name: name,
+        U_Ordr_Rec_Phone: phone,
+        U_Ordr_Rec_shiptype: deliveryMethod,
+        Comments: notes,
+      }));
+
+      return { ...prevCart, Orders: updatedOrders };
+    });
+  }, [name, phone, deliveryMethod, notes]);
 
   useEffect(() => {
     const fetchExitTime = async () => {
@@ -197,7 +268,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   ref={phoneInputRef}
                   style={[styles.input, { fontSize: 14, color: "#BDC3C7" }]}
                   value={phone}
-                  onChangeText={setName}
+                  onChangeText={setPhone}
                   returnKeyType="done"
                 />
               </View>
@@ -253,7 +324,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   placeholder="הערות"
                   style={styles.input}
                   value={notes}
-                  onChangeText={setName}
+                  onChangeText={setNotes}
                 />
               </View>
               <View style={{ paddingHorizontal: 15 }}>

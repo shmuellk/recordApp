@@ -41,9 +41,24 @@ const getWhatsAppUsers = async () => {
   }
 };
 
+const sendFailureEmail = async (data) => {
+  try {
+    const response = await axios.post(`${IP}/users/sendEmail`, data);
+
+    if (response.status === 200) {
+      console.log("Failure email sent successfully");
+    } else {
+      console.error("Unexpected status code:", response.status);
+    }
+  } catch (error) {
+    console.error("Error sending failure email:", error);
+  }
+};
+
 const usersModel = {
   login,
   getWhatsAppUsers,
+  sendFailureEmail,
 };
 
 export default usersModel;
