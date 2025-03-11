@@ -14,11 +14,11 @@ const getAllSalesProdact = async (data) => {
     if (response.status === 200) {
       return response.data.order;
     } else {
-      console.error("Unexpected status code:", response.status);
+      // console.error("Unexpected status code:", response.status);
       return [];
     }
   } catch (error) {
-    console.error("Error during OrdersList request:", error.message);
+    // console.error("Error during OrdersList request:", error.message);
     return [];
   }
 };

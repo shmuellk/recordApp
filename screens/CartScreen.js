@@ -97,6 +97,7 @@ const CartScreen = ({ navigation, route }) => {
             amount: item.AMOUNT,
             year: item.FROM_YEAR + "-" + item.UNTIL_YEAR,
             capacity: item.CAPACITY,
+            sku_code: item.SKU_CODE,
           }));
           setCartItems(transformedData);
           const updatedQuantities = transformedData.map((item) => ({
@@ -250,9 +251,6 @@ const CartScreen = ({ navigation, route }) => {
   };
 
   const renderItem = ({ item }) => {
-    console.log("====================================");
-    console.log(JSON.stringify(item));
-    console.log("====================================");
     const netPriceNumber =
       parseFloat(String(item.net_price).replace(/[^\d.]/g, "")) || 0;
     const grossPriceNumber =
@@ -309,14 +307,54 @@ const CartScreen = ({ navigation, route }) => {
           <View style={Cardstyles.itemDataView}>
             <View style={Cardstyles.textData}>
               <Text style={Cardstyles.haderText}>{item.name}</Text>
+
               <View style={Cardstyles.infoView}>
                 <View style={Cardstyles.leftText}>
-                  <Text style={Cardstyles.infoText}>
-                    {item.carName} | {item.year}
-                    {item.capacity ? ` | נפח: ${item.capacity}` : ""}
+                  <Text
+                    style={[
+                      Cardstyles.infoText,
+                      { direction: "rtl", flexShrink: 1 },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {item.carName}
                   </Text>
+                  <View
+                    style={{
+                      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={[Cardstyles.infoText, { flexShrink: 1 }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {item.year}
+                    </Text>
+                    {item.capacity ? (
+                      <>
+                        <Text
+                          style={[Cardstyles.infoText, { flexShrink: 0 }]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          {" | "}
+                        </Text>
+                        <Text
+                          style={[Cardstyles.infoText, { flexShrink: 1 }]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          {`נפח: ${item.capacity}`}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
                 </View>
               </View>
+
               <View>
                 <View
                   style={{
@@ -324,7 +362,7 @@ const CartScreen = ({ navigation, route }) => {
                   }}
                 >
                   <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
-                  <Text style={Cardstyles.infoText}>{item.SKU}</Text>
+                  <Text style={Cardstyles.infoText}>{item.sku_code}</Text>
                 </View>
                 <View
                   style={{
@@ -567,7 +605,7 @@ const CartScreen = ({ navigation, route }) => {
               }}
             >
               <View style={{ transform: [{ scale: 2 }] }}>
-                <ActivityIndicator size="large" color="#ED2027" />
+                <ActivityIndicator size="large" color="#d01117" />
               </View>
             </View>
           ) : (
@@ -674,6 +712,9 @@ const Cardstyles = StyleSheet.create({
   infoText: {
     fontSize: moderateScale(15),
     color: "#7E7D83",
+    textAlign: "right", // מיישר הכל לימין
+    direction: "rtl", // מכריח את הכיוון להיות RTL
+    unicodeBidi: "embed", // מונע הפיכת סדר בטקסט מעורב
   },
   infoTitle: {
     fontSize: moderateScale(16),
@@ -754,7 +795,7 @@ const Cardstyles = StyleSheet.create({
   amoutText: {
     fontSize: moderateScale(17),
     fontWeight: "bold",
-    color: "#ED2027",
+    color: "#d01117",
     alignContent: "center",
     alignItems: "center",
     alignSelf: "center",

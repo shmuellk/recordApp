@@ -77,7 +77,7 @@ const MonthYearSelector = ({
                 backgroundColor:
                   index === new Date().getMonth() &&
                   currentYear === new Date().getFullYear()
-                    ? "#ED2027"
+                    ? "#d01117"
                     : "transparent",
               },
             ]}

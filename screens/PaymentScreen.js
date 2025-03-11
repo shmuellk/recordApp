@@ -93,7 +93,10 @@ const PaymentScreen = ({ navigation, route }) => {
       }
       showPopup("ההזמנה בוצעה בהצלחה"); // Show popup first
       setTimeout(() => {
-        navigation.navigate("Search", { userData: userData });
+        navigation.navigate("SearchScreen", {
+          userData: userData,
+          resetFilters: true,
+        });
       }, 2000); // 2-second delay to allow popup visibility
     }
   };
@@ -296,23 +299,35 @@ const PaymentScreen = ({ navigation, route }) => {
                 }}
               >
                 <Text
-                  style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                  style={{ color: "d01117", fontWeight: "bold", fontSize: 16 }}
                 >
                   זמן יציאת משלוח משוער:
                 </Text>
                 <View style={{ flexDirection: "row" }}>
                   <Text
-                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                    style={{
+                      color: "d01117",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
                   >
                     {exitDate}
                   </Text>
                   <Text
-                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                    style={{
+                      color: "d01117",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
                   >
                     |
                   </Text>
                   <Text
-                    style={{ color: "red", fontWeight: "bold", fontSize: 16 }}
+                    style={{
+                      color: "d01117",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
                   >
                     {exitTime}
                   </Text>

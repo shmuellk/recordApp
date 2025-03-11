@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Keyboard,
+  I18nManager,
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import MonthYearSelector from "./MonthYearSelector"; // Import the custom selector component
@@ -52,6 +53,13 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
     new Date().toISOString().split("T")[0]
   );
   const [showMonthYearSelector, setShowMonthYearSelector] = useState(false);
+  useEffect(() => {
+    if (I18nManager.isRTL) {
+      I18nManager.forceRTL(true);
+    } else {
+      I18nManager.forceRTL(false);
+    }
+  }, []);
 
   const handleMonthYearSelect = (year, month) => {
     // Set the selected date to the first day of the selected month and year as a string
@@ -104,7 +112,7 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
                   />
                 )}
                 markedDates={{
-                  [selectedDate]: { selected: true, selectedColor: "#ED2027" },
+                  [selectedDate]: { selected: true, selectedColor: "#d01117" },
                 }}
                 monthFormat={"MMMM yyyy"}
                 theme={{
@@ -112,8 +120,8 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
                   textMonthFontWeight: "bold",
                   textDayHeaderFontSize: 16,
                   textMonthFontSize: 20,
-                  arrowColor: "#ED2027",
-                  todayTextColor: "#ED2027",
+                  arrowColor: "#d01117",
+                  todayTextColor: "#d01117",
                 }}
                 locale="he"
               />

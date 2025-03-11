@@ -14,19 +14,6 @@ const renderItem = ({ item, navigation }) => {
     // Navigate to the ItemCardScreen, passing item details as parameters
     if (item) {
       try {
-        console.log("====================================");
-        console.log(`PARENT_GROUP: ${item.PARENT_GROUP},
-                ITEM_GROUP: ${item.ITEM_GROUP},
-                CHILD_GROUP: ${item.CHILD_GROUP},
-                MANUFACTURER: ${item.MANUFACTURER},
-                MODEL: ${item.MODEL},
-                CAPACITY: ${item.CAPACITY},
-                FROM_YEAR: ${item.FROM_YEAR},
-                UNTIL_YEAR: ${item.UNTIL_YEAR},
-                YEAR_LIMIT: ${item.YEAR_LIMIT},
-                CAR_NOTE: ${item.CAR_NOTE},
-                DESCRIPTION_NOTE:${item.DESCRIPTION_NOTE},`);
-        console.log("====================================");
         const Brand = await itemCardModel.getItemBrandByCar({
           PARENT_GROUP: item.PARENT_GROUP,
           ITEM_GROUP: item.ITEM_GROUP,
@@ -56,9 +43,6 @@ const renderItem = ({ item, navigation }) => {
           CHILD_GROUP: item.CHILD_GROUP,
           DESCRIPTION_NOTE: item.DESCRIPTION_NOTE,
         });
-        console.log("====================================");
-        console.log("Brand - getItemBrand: " + JSON.stringify(Brand));
-        console.log("====================================");
         navigation.navigate("ItemCardScreen", { item, Brand });
       } catch (error) {
         console.log("====================================");

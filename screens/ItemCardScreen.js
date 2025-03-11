@@ -36,12 +36,13 @@ const ItemCardScreen = ({ route, navigation }) => {
   const { item, Brand, userData, carInfo } = route.params || {}; // Default to an empty object if item is undefined
   const [star, setStar] = useState(false);
   const [armor, setArmor] = useState(false);
-  const [inStock, setInStock] = useState(Brand[0].quantity > 0 ? true : false);
-  const [Stock, setStock] = useState(Brand[0].quantity);
-  const [infoByBrand, setInfoByBrand] = useState(Brand[0] || []);
+  const [inStock, setInStock] = useState(Brand?.[0]?.quantity > 0 ?? false);
+  const [Stock, setStock] = useState(Brand?.[0]?.quantity ?? 0);
+  const [infoByBrand, setInfoByBrand] = useState(Brand?.[0] ?? {});
   const [timestamp] = useState(Date.now());
   const [popupsQueue, setPopupsQueue] = useState([]);
   const [currentPopup, setCurrentPopup] = useState(null);
+  const [imageErrorMap, setImageErrorMap] = useState({}); // ניהול טעויות תמונה לפי קטלוג
   const [selectedBrand, setSelectedBrand] = useState(
     Brand[0].catalog_number || ""
   );
@@ -218,28 +219,44 @@ const ItemCardScreen = ({ route, navigation }) => {
     setAmountToBy(1);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.itemContainer,
-        {
-          backgroundColor:
-            selectedBrand === item.catalog_number ? "#EBEDF5" : "white",
-        }, // Change background color if selected
-      ]}
-      onPress={() => handleOnPressBrand(item)} // Set selected brand when pressed
-    >
-      <Image
-        style={styles.brandImage}
-        source={{
-          uri: `http://app.record.a-zuzit.co.il:8085/media/${item.brand}.jpg?timestamp=${timestamp}`,
-        }}
-        onError={(error) =>
-          console.log("Image Load Error in: ", error.nativeEvent.error)
-        }
-      />
-    </TouchableOpacity>
-  );
+  const handleImageError = (catalogNumber) => {
+    setImageErrorMap((prevState) => ({
+      ...prevState,
+      [catalogNumber]: true, // רק פריט זה מקבל סטטוס שאין תמונה
+    }));
+  };
+
+  const renderItem = ({ item }) => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.itemContainer,
+          {
+            backgroundColor:
+              selectedBrand === item.catalog_number ? "#EBEDF5" : "white",
+            borderColor:
+              selectedBrand === item.catalog_number ? "#D01117" : "#ccc",
+            borderWidth: selectedBrand === item.catalog_number ? 2 : 1,
+          },
+        ]}
+        onPress={() => handleOnPressBrand(item)}
+      >
+        {!imageErrorMap[item.catalog_number] ? (
+          <Image
+            style={styles.brandImage}
+            source={{
+              uri: `http://app.record.a-zuzit.co.il:8085/media/${item.brand}.jpg?timestamp=${timestamp}`,
+            }}
+            onError={() => handleImageError(item.catalog_number)} // סימון כשלון רק עבור הפריט הזה
+          />
+        ) : (
+          <View style={styles.fallbackContainer}>
+            <Text style={styles.brandTextFallback}>{item.brand}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -344,10 +361,18 @@ const ItemCardScreen = ({ route, navigation }) => {
               </View>
 
               {/* SKU and Brand Info */}
-              <Text style={styles.skuText}>
-                מק"ט: {infoByBrand.catalog_number}
-              </Text>
-              <Text style={styles.brandText}>מותג: {infoByBrand.brand}</Text>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={styles.skuText}>מק"ט: </Text>
+                <Text style={[styles.skuText, { direction: "ltr" }]}>
+                  {infoByBrand.sku_code}
+                </Text>
+              </View>
+              {/* <Text style={styles.brandText}>מותג: {infoByBrand.brand}</Text> */}
               {/* Price Section */}
               <View
                 style={{
@@ -405,26 +430,33 @@ const ItemCardScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={styles.armor}>
-                <Text style={styles.inventoryText}>אזל מהמלאי</Text>
-                <TouchableOpacity
-                  onPress={handleArmorToggle}
-                  style={{
-                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-                    alignContent: "center",
-                  }}
-                >
-                  <Text style={styles.armorText}>שריין פריט זה</Text>
-                  <Image
-                    style={{ top: 3 }}
-                    source={
-                      armor
-                        ? require("../assets/icons/itemCard/RedReserve.png")
-                        : require("../assets/icons/itemCard/GreyReserve.png")
-                    }
-                  />
-                </TouchableOpacity>
-              </View>
+              <>
+                <View style={styles.armor}>
+                  <Text style={styles.inventoryText}>אזל מהמלאי</Text>
+                  <TouchableOpacity
+                    onPress={handleArmorToggle}
+                    style={{
+                      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+                      alignContent: "center",
+                    }}
+                  >
+                    <Text style={styles.armorText}>שריין פריט זה</Text>
+                    <Image
+                      style={{ top: 3 }}
+                      source={
+                        armor
+                          ? require("../assets/icons/itemCard/RedReserve.png")
+                          : require("../assets/icons/itemCard/GreyReserve.png")
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* <View style={styles.supply}>
+                  <Text style={styles.supplyText}>תאריך אספקה קרוב : </Text>
+                  <Text style={styles.supplyDate}>27/06/2025</Text>
+                </View> */}
+              </>
             )}
           </View>
           <View style={styles.brandView}>
@@ -448,18 +480,21 @@ const ItemCardScreen = ({ route, navigation }) => {
               type={1}
               car={item}
               catalog_number={infoByBrand.catalog_number}
+              sku_code={infoByBrand.sku_code}
             />
             <InfoButton
               placeholder={"רכבים"}
               type={2}
               car={item}
               catalog_number={infoByBrand.catalog_number}
+              sku_code={infoByBrand.sku_code}
             />
             <InfoButton
               placeholder={"מק''ט חלופי"}
               type={3}
               car={item}
               catalog_number={infoByBrand.catalog_number}
+              sku_code={infoByBrand.sku_code}
             />
           </View>
 
@@ -482,6 +517,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
   },
+  fallbackContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    padding: 5,
+  },
+  brandTextFallback: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#D01117",
+    textAlign: "center",
+  },
+  // textOutline: {
+  //   textShadowColor: "#0000FF", // Blue outline
+  //   textShadowOffset: { width: 1, height: 1 },
+  //   textShadowRadius: 3,
+  // },
+
   quantityBtnIconPlus: {
     color: "#d01117",
     fontWeight: "bold",
@@ -558,7 +614,7 @@ const styles = StyleSheet.create({
   productTitle: {
     fontSize: moderateScale(22),
     fontWeight: "bold",
-    color: "#3A5683",
+    color: "#1A2540",
     textAlign: I18nManager.isRTL ? "left" : "right",
     flex: 1,
   },
@@ -569,7 +625,10 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     color: "#1A2540",
     textAlign: I18nManager.isRTL ? "left" : "right",
+    direction: "ltr",
+    unicodeBidi: "plaintext",
   },
+
   brandText: {
     fontSize: moderateScale(16),
     color: "#7E7D83",
@@ -639,7 +698,7 @@ const styles = StyleSheet.create({
   },
   inventoryText: {
     fontSize: moderateScale(22),
-    color: "#ED2027",
+    color: "#d01117",
     fontWeight: "bold",
   },
   armorText: {
@@ -653,16 +712,16 @@ const styles = StyleSheet.create({
     marginLeft: I18nManager.isRTL ? null : scale(10),
     alignItems: "center",
     backgroundColor: "white",
-    borderRadius: scale(10),
+    borderRadius: 8,
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#ccc",
   },
   brandImage: {
-    width: "80%",
-    height: "80%",
-    resizeMode: "stretch",
-    borderRadius: scale(10),
+    width: "98%",
+    height: "98%",
+    resizeMode: "contain",
+    borderRadius: 8,
   },
   PopUpView: {
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
@@ -693,6 +752,22 @@ const styles = StyleSheet.create({
     color: "#000",
     backgroundColor: "#fff",
     // marginHorizontal: scale(5),
+  },
+  supply: {
+    flex: 1,
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignItems: "center",
+    top: verticalScale(-5),
+    paddingHorizontal: scale(10),
+  },
+  supplyText: {
+    fontSize: moderateScale(16),
+    color: "#7E7D83",
+  },
+  supplyDate: {
+    fontSize: moderateScale(16),
+    color: "#d01117",
+    fontWeight: "bold",
   },
 });
 export default ItemCardScreen;

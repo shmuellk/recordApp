@@ -64,7 +64,7 @@ const PopUp = ({ data, onClose, title, loading }) => {
             <View style={styles.loaderContainer}>
               <ActivityIndicator
                 size="large"
-                color="#ED2027"
+                color="#d01117"
                 style={styles.bigSpinner}
               />
             </View>

@@ -4,6 +4,7 @@ import { View, StyleSheet, Dimensions, I18nManager } from "react-native";
 import serchNav from "./serchNav";
 import CartScreen from "./screens/CartScreen";
 import TrackScreen from "./screens/TrackScreen";
+import ManegTrackScreen from "./screens/ManegTrackScreen";
 import MenuScreen from "./screens/MenuScreen";
 import SalesScreen from "./screens/SalesScreen";
 
@@ -33,7 +34,7 @@ const TabNavigator = ({ route }) => {
     },
     {
       name: "Track",
-      component: TrackScreen,
+      component: userData.U_TYPE === "מנהל" ? ManegTrackScreen : TrackScreen,
       label: "מעקב הזמנות",
       icon: "profile",
     },
@@ -66,7 +67,7 @@ const TabNavigator = ({ route }) => {
               <Icon2
                 name={tab.icon}
                 size={22}
-                color={focused ? "#ED2027" : "#959595"}
+                color={focused ? "#d01117" : "#959595"}
                 style={styles.icon}
               />
             );
@@ -75,7 +76,7 @@ const TabNavigator = ({ route }) => {
               <Icon
                 name={tab.icon}
                 size={22}
-                color={focused ? "#ED2027" : "#959595"}
+                color={focused ? "#d01117" : "#959595"}
                 style={styles.icon}
               />
             );
@@ -83,7 +84,7 @@ const TabNavigator = ({ route }) => {
 
           return <View style={styles.iconContainer}>{iconElement}</View>;
         },
-        tabBarActiveTintColor: "#ED2027",
+        tabBarActiveTintColor: "#d01117",
         tabBarInactiveTintColor: "#959595",
         tabBarLabelStyle: {
           fontSize: 10,

@@ -9,41 +9,105 @@ import {
   FlatList,
   ActivityIndicator,
   I18nManager,
+  Keyboard,
 } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
 import CalendarPop from "../components/calenderPopup";
 import InvPopup from "../components/invPopup";
 import ordersModel from "../model/ordersModel";
+import { TextInput } from "react-native-gesture-handler";
+import clientModel from "../model/clientModel";
+
 const { width, height } = Dimensions.get("window");
+
+// Base dimensions from your design (adjust these values as needed)
+const guidelineBaseWidth = 350;
+const guidelineBaseHeight = 680;
+
+// Scaling helper functions
+const scale = (size) => (width / guidelineBaseWidth) * size;
+const verticalScale = (size) => (height / guidelineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 const TrackScreen = ({ navigation, route }) => {
   const today = new Date();
-  const thisYear = today.getFullYear();
   const { userData } = route.params;
-  const defaultStartDate = new Date(thisYear, 0, 1).toLocaleDateString("en-GB");
+  const defaultStartDate = today.toLocaleDateString("en-GB");
   const defaultEndDate = today.toLocaleDateString("en-GB");
   const [isEmpty, setIsEmpty] = useState(false);
   const [openPopUp, setOpenPopUp] = useState(null);
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
-  const [selectedtatus, setSelectedtatus] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [orderList, setOrderList] = useState([]);
   const [invData, setInvData] = useState([]);
   const [popUploading, setPopUploading] = useState(false);
   const [pageloading, setPageloading] = useState(false);
+  const [totalorder, setTotalOrder] = useState(0);
+  const [clientName, setClientName] = useState("");
+  const [clientList, setClientList] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    const fetchClinentList = async () => {
+      const data = await clientModel.getAllClient();
+      setClientList(data);
+      setFilteredClients(data);
+    };
+    fetchClinentList();
+  }, []);
+
+  const handleClientSearch = (text) => {
+    setClientName(text);
+    if (text.length > 1) {
+      const filtered = clientList.filter((client) =>
+        client.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredClients(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    setPageloading(true);
+    try {
+      const response = await ordersModel.getAllOrdersList({
+        STARTDATE: startDate,
+        ENDDATE: endDate,
+        CARDNAME: clientName,
+      });
+      setOrderList(response);
+      setTotalOrder(response[0].TotalRows);
+    } catch (err) {
+      console.log("====================================");
+      console.log("error = " + err);
+      console.log("====================================");
+    } finally {
+      setPageloading(false);
+    }
+  };
+
+  const handleSelectClient = (client) => {
+    setClientName(client);
+    setShowSuggestions(false);
+    Keyboard.dismiss();
+  };
 
   useEffect(() => {
     fatchOrderList = async () => {
       setPageloading(true);
       try {
-        const response = await ordersModel.getOrdersList({
-          CARDCODE: userData.U_CARD_CODE,
+        const response = await ordersModel.getAllOrdersList({
           STARTDATE: startDate,
           ENDDATE: endDate,
-          DELIVERYSTTS: selectedtatus,
+          CARDNAME: clientName,
         });
         setOrderList(response);
+        setTotalOrder(response[0] ? response[0].TotalRows : 0);
       } catch (err) {
         console.log("====================================");
         console.log("error = " + err);
@@ -53,14 +117,14 @@ const TrackScreen = ({ navigation, route }) => {
       }
     };
     fatchOrderList();
-  }, [startDate, endDate, selectedtatus]);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     const fatchItemsList = async () => {
       if (!selectedItem) return; // If nothing is selected, skip
       try {
         setPopUploading(true); // <-- Start loading
-        const response = await ordersModel.getItemsByDocNum({
+        const response = await ordersModel.getAppOrderByDocNum({
           DOCNUM: selectedItem,
         });
         setInvData(response);
@@ -87,6 +151,15 @@ const TrackScreen = ({ navigation, route }) => {
   const togglePopUp = (type = null) => {
     setOpenPopUp(type);
   };
+
+  const getDayName = (dateString) => {
+    const dateParts = dateString.split("/");
+    const formattedDate = new Date(
+      `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+    );
+    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+    return days[formattedDate.getDay()];
+  };
   const renderSeparatorItem = () => <View style={styles.ItemsSeparator} />;
 
   const handleSetDate = (date) => {
@@ -100,46 +173,33 @@ const TrackScreen = ({ navigation, route }) => {
     <TouchableOpacity
       style={{
         flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-        height: height * 0.11,
+        height: height * 0.09,
       }}
       onPress={() => handleItemPress(item.DOCNUM)}
     >
       <View
         style={{
           flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-          flex: 7.5,
+          flex: 5.5,
         }}
       >
         <View style={{ padding: 10 }}>
-          <Text style={styles.itemHader}>מס' חשבונית : </Text>
-          <Text style={styles.itemInfo}>אופן שילוח : </Text>
-          <Text style={styles.itemInfo}>סטטוס : </Text>
-        </View>
-        <View style={{ padding: 10 }}>
-          <Text
-            style={[
-              styles.itemHader,
-              { textAlign: I18nManager.isRTL ? "left" : "right" },
-            ]}
+          <View
+            style={{
+              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+            }}
           >
-            {item.DOCNUM}
-          </Text>
-          <Text
-            style={[
-              styles.itemInfo,
-              { textAlign: I18nManager.isRTL ? "left" : "right" },
-            ]}
-          >
-            {item.U_REC_SHIPTYPE}
-          </Text>
-          <Text
-            style={[
-              styles.itemInfo,
-              { textAlign: I18nManager.isRTL ? "left" : "right" },
-            ]}
-          >
-            {item.DELIVERY_STATUS}
-          </Text>
+            <Text style={styles.itemHader}>מס' חשבונית : </Text>
+            <Text
+              style={[
+                styles.itemHader,
+                { textAlign: I18nManager.isRTL ? "left" : "right" },
+              ]}
+            >
+              {item.DOCNUM}
+            </Text>
+          </View>
+          <Text style={styles.itemSubText}>{item.CARDNAME}</Text>
         </View>
       </View>
       <View style={styles.verticalSeparator} />
@@ -178,7 +238,7 @@ const TrackScreen = ({ navigation, route }) => {
           <View style={{ flex: 0.5 }}></View>
           <View
             style={{
-              flex: 1.5,
+              height: height * 0.13,
               flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
               justifyContent: "space-between",
               alignItems: "center",
@@ -207,7 +267,9 @@ const TrackScreen = ({ navigation, route }) => {
               >
                 {startDate}
               </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>יום שלישי</Text>
+              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+                יום {getDayName(startDate)}
+              </Text>
             </TouchableOpacity>
 
             <View
@@ -236,66 +298,86 @@ const TrackScreen = ({ navigation, route }) => {
               >
                 {endDate}
               </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>יום שלישי</Text>
+              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+                יום {getDayName(endDate)}
+              </Text>
             </TouchableOpacity>
           </View>
           <View
             style={{
-              flex: 0.6,
               flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
               width: width,
+              height: height * 0.06,
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 20,
             }}
           >
+            <View
+              style={{
+                height: scale(30),
+                width: verticalScale(130),
+                alignSelf: "center",
+                borderRadius: 10,
+                borderColor: "#EBEDF8",
+                borderWidth: 2,
+              }}
+            >
+              <TextInput
+                placeholder="חפש שם לקוח"
+                style={styles.input}
+                value={clientName}
+                onChangeText={handleClientSearch}
+              />
+            </View>
             <TouchableOpacity
-              style={[
-                styles.filterButton,
-                selectedtatus == "" && styles.selectedButton,
-              ]}
-              onPress={() => setSelectedtatus("")}
+              style={{
+                backgroundColor: "#d01117",
+                height: scale(28),
+                width: verticalScale(50),
+                alignSelf: "center",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 10,
+              }}
+              onPress={handleSearch}
             >
               <Text
-                style={[
-                  styles.buttonText,
-                  selectedtatus == "" && styles.selectedButtonText,
-                ]}
+                style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
               >
-                הכל
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                selectedtatus == "2" && styles.selectedButton,
-              ]}
-              onPress={() => setSelectedtatus("2")}
-            >
-              <Text
-                style={[
-                  styles.buttonText,
-                  selectedtatus == "2" && styles.selectedButtonText,
-                ]}
-              >
-                חבילה נמסרה
+                חפש
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                selectedtatus == "1" && styles.selectedButton,
-              ]}
-              onPress={() => setSelectedtatus("1")}
+            <View
+              style={{
+                height: scale(30),
+                width: verticalScale(100),
+                alignSelf: "center",
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                borderColor: "#EBEDF8",
+                borderWidth: 2,
+              }}
             >
-              <Text
-                style={[
-                  styles.buttonText,
-                  selectedtatus == "1" && styles.selectedButtonText,
-                ]}
-              >
-                חבילה בטיפול
-              </Text>
-            </TouchableOpacity>
+              <Text adjustsFontSizeToFit>סכ"ה הזמנות : {totalorder}</Text>
+            </View>
           </View>
+          {showSuggestions && (
+            <View style={styles.suggestionsContainer}>
+              <FlatList
+                data={filteredClients}
+                keyExtractor={(item, index) => index.toString()}
+                keyboardShouldPersistTaps={"handled"}
+                renderItem={({ item }) => (
+                  <TouchableOpacity onPress={() => handleSelectClient(item)}>
+                    <Text style={styles.suggestionText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          )}
           <View style={styles.ItemsSeparator} />
           <View style={{ flex: 7.4 }}>
             {pageloading ? (
@@ -359,9 +441,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  suggestionsContainer: {
+    position: "absolute",
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    width: verticalScale(130),
+
+    maxHeight: height * 0.3,
+    zIndex: 10, // Ensures it appears above everything else
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+    right: I18nManager.isRTL ? null : 20,
+    left: I18nManager.isRTL ? 20 : null,
+    top: height * 0.225,
+  },
+  suggestionText: {
+    padding: 12,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  input: {
+    borderRadius: 15,
+    padding: height * 0.01,
+    textAlign: "right",
+    width: "100%",
+    alignSelf: "center",
+    backgroundColor: "white",
+    fontSize: 14,
+    color: "#BDC3C7",
+  },
   container2: {
     flex: 1,
     backgroundColor: "white",
+  },
+  itemSubText: {
+    fontSize: 14,
+    color: "#666", // צבע פחות דומיננטי לשם החברה
   },
   emptyCartView: {
     justifyContent: "center",

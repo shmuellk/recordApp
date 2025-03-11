@@ -27,11 +27,15 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
         </TouchableOpacity>
 
         {/* Title */}
-        <Text style={styles.header}>
-          {I18nManager.isRTL
-            ? `${title} : ${subTitle}`
-            : `${subTitle} : ${title}`}
-        </Text>
+        <View
+          style={{
+            flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+            alignSelf: "center",
+          }}
+        >
+          <Text style={styles.header}>{subTitle} : </Text>
+          <Text style={styles.header}>{title}</Text>
+        </View>
 
         {/* Table Header */}
         {data.length > 0 && (
@@ -148,12 +152,12 @@ const styles = StyleSheet.create({
 
   /* Column-Specific Styles */
   cellModel: {
-    flex: 3,
+    flex: 3.5,
     textAlign: I18nManager.isRTL ? "left" : "right",
     paddingHorizontal: 10,
   },
   cellYears: {
-    flex: 4,
+    flex: 3.5,
     textAlign: "center",
   },
   cellCapacity: {

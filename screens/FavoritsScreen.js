@@ -92,6 +92,7 @@ const FavoritsScreen = ({ navigation, route }) => {
             quantity: item.QUANTITY,
             brand: item.BRAND,
             amount: 1,
+            sku_code: item.SKU_CODE,
           }));
 
           console.log("transformedData: " + JSON.stringify(transformedData));
@@ -273,7 +274,7 @@ const FavoritsScreen = ({ navigation, route }) => {
                 }}
               >
                 <Text style={Cardstyles.infoTitle}>מק"ט : </Text>
-                <Text style={Cardstyles.infoText}>{item.SKU}</Text>
+                <Text style={Cardstyles.infoText}>{item.sku_code}</Text>
               </View>
               <View
                 style={{
@@ -349,7 +350,7 @@ const FavoritsScreen = ({ navigation, route }) => {
                 disabled={!!addItemToCart[item.id]}
               >
                 {addItemToCart[item.id] ? (
-                  <ActivityIndicator color="red" />
+                  <ActivityIndicator color="d01117" />
                 ) : (
                   <Text
                     style={{
@@ -440,7 +441,7 @@ const FavoritsScreen = ({ navigation, route }) => {
                   }}
                 >
                   <View style={{ transform: [{ scale: 2 }] }}>
-                    <ActivityIndicator size="large" color="#ED2027" />
+                    <ActivityIndicator size="large" color="#d01117" />
                   </View>
                 </View>
               ) : (

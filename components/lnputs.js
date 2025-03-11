@@ -44,7 +44,7 @@ const Input = forwardRef(
           style={[
             styles.inputView,
             {
-              borderColor: error ? "red" : isFocused ? "#000000" : "#7E7D83",
+              borderColor: error ? "d01117" : isFocused ? "#000000" : "#7E7D83",
               flexDirection: I18nManager.isRTL ? "row-reverse" : "row", // Adjust direction
             },
           ]}
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     color: "#7E7D83",
   },
   errorText: {
-    color: "red",
+    color: "d01117",
     fontSize: 12,
     marginTop: 2,
   },

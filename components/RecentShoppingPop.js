@@ -14,6 +14,12 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const parts = dateString.split("T")[0].split("-"); // מחלק את התאריך
+  return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+};
+
 const PopUp = ({ data, onClose, title, subTitle }) => {
   console.log("====================================");
   console.log("data last update: " + JSON.stringify(data));
@@ -31,19 +37,23 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Image source={require("../assets/icons/searchIcons/Close.png")} />
         </TouchableOpacity>
-        <Text style={styles.header}>
-          {I18nManager.isRTL
-            ? `${title} : ${subTitle}`
-            : `${subTitle} : ${title}`}
-        </Text>
+        <View
+          style={{
+            flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+            alignSelf: "center",
+          }}
+        >
+          <Text style={styles.header}>{subTitle} : </Text>
+          <Text style={styles.header}>{title}</Text>
+        </View>
 
         {/* <Text style={styles.header}>{subTitle}</Text> */}
 
         {data[0] && (
           <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderCell}>מחיר נטו</Text>
-            <Text style={styles.tableHeaderCell}>כמות</Text>
             <Text style={styles.tableHeaderCell}>תאריך</Text>
+            <Text style={styles.tableHeaderCell}>כמות</Text>
+            <Text style={styles.tableHeaderCell}>מחיר נטו</Text>
           </View>
         )}
         {data[0] && (
@@ -59,7 +69,7 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {item.NETPRICE}
+                  {item.DOCDATE ? formatDate(item.DOCDATE) : ""}
                 </Text>
                 <Text
                   style={styles.tableCell}
@@ -73,7 +83,7 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {item.DOCDATE ? item.DOCDATE.split("T")[0] : ""}
+                  {item.NETPRICE}
                 </Text>
               </View>
             )}
@@ -138,6 +148,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     color: "#1A2540",
   },
+
   searchInput: {
     height: 40,
     width: "100%",

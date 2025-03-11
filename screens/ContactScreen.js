@@ -11,7 +11,6 @@ import {
   Alert,
   I18nManager,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
 import Icon2 from "react-native-vector-icons/AntDesign";
 import Icon3 from "react-native-vector-icons/MaterialIcons";
 import usersModel from "../model/usersModel";

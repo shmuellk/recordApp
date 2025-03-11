@@ -15,7 +15,7 @@ import itemCardModel from "../model/itemCardModel";
 
 const { width } = Dimensions.get("window");
 
-const InfoButton = ({ placeholder, type, car, catalog_number }) => {
+const InfoButton = ({ placeholder, type, car, catalog_number, sku_code }) => {
   const [openPopUp, setOpenPopUp] = useState(false);
   const [RecentShoppingPopData, setRecentShoppingPopData] = useState([]);
   const [VehiclesPopData, setVehiclesPopData] = useState([]);
@@ -74,7 +74,7 @@ const InfoButton = ({ placeholder, type, car, catalog_number }) => {
           <RecentShoppingPop
             data={RecentShoppingPopData}
             onClose={togglePopUp}
-            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            title={car ? sku_code : "Unknown"} // Safe check for car.name
             subTitle={"קניות אחרונות"} // Safe check for car.carName
           />
         )}
@@ -82,7 +82,7 @@ const InfoButton = ({ placeholder, type, car, catalog_number }) => {
           <VehiclesPop
             data={VehiclesPopData}
             onClose={togglePopUp}
-            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            title={car ? sku_code : "Unknown"} // Safe check for car.name
             subTitle={"רכבים"} // Safe check for car.carName
           />
         )}
@@ -90,7 +90,7 @@ const InfoButton = ({ placeholder, type, car, catalog_number }) => {
           <AlternateSKUPop
             data={AlternateSKUPopData}
             onClose={togglePopUp}
-            title={car ? catalog_number : "Unknown"} // Safe check for car.name
+            title={car ? sku_code : "Unknown"} // Safe check for car.name
             subTitle={"מקטים חלופיים"} // Safe check for car.carName
           />
         )}

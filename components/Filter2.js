@@ -57,7 +57,7 @@ const Filter = ({
           disabled={!enable || loading}
         >
           {loading ? ( // Show loader if loading
-            <ActivityIndicator size="small" color="#ED2027" />
+            <ActivityIndicator size="small" color="#d01117" />
           ) : (
             <>
               <Text style={styles.input}>{selectedPlaceholder}</Text>

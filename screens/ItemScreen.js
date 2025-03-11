@@ -27,14 +27,6 @@ import Icon2 from "react-native-vector-icons/FontAwesome";
 
 const { width, height } = Dimensions.get("window");
 
-const chunkData = (data, chunkSize) => {
-  const chunks = [];
-  for (let i = 0; i < data.length; i += chunkSize) {
-    chunks.push(data.slice(i, i + chunkSize));
-  }
-  return chunks;
-};
-
 const ItemScreen = ({ navigation, route }) => {
   const [filteredItems, setFilteredItems] = useState([]); // State for filtered items
   const [showImage, setShowImage] = useState(false); // State for image display
@@ -602,7 +594,7 @@ const ItemScreen = ({ navigation, route }) => {
                       fontSize: width * 0.04,
                       marginTop: 5,
                       marginBottom: 10,
-                      color: "#ED2027",
+                      color: "#d01117",
                     }}
                   >
                     לבקשת פריט התחל שיחה עם :

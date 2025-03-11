@@ -15,7 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import cartModel from "../model/cartModel"; // adjust the pathimport Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
 import salesModel from "../model/salesModel";
 import SuccessPopup from "../components/SuccessPopup";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Using Ionicons for the left arrow
+import Icon from "react-native-vector-icons/Fontisto"; // Using Ionicons for the left arrow
 import carModel from "../model/carsModel";
 import itemCardModel from "../model/itemCardModel";
 
@@ -168,12 +168,20 @@ const ArmorScreen = ({ navigation, route }) => {
         CATALOG_NUMBER: data,
       });
 
+      console.log("====================================");
+      console.log("product = " + JSON.stringify(product));
+      console.log("====================================");
+
       try {
         const Brand = await itemCardModel.getItemBrand({
           CATALOG_NUMBER: product[0].CATALOG_NUMBER,
           CHILD_GROUP: product[0].CHILD_GROUP,
           DESCRIPTION_NOTE: product[0].DESCRIPTION_NOTE,
         });
+
+        console.log("====================================");
+        console.log("Brand = " + JSON.stringify(Brand));
+        console.log("====================================");
         navigation.navigate("ItemCardScreen", {
           item: product[0],
           Brand,
@@ -273,7 +281,7 @@ const ArmorScreen = ({ navigation, route }) => {
               disabled={!!addItemToCart[item.id]}
             >
               {addItemToCart[item.id] ? (
-                <ActivityIndicator color="red" />
+                <ActivityIndicator color="d01117" />
               ) : (
                 <Text style={Cardstyles.addButtonText}>הוסף לעגלה</Text>
               )}
@@ -315,7 +323,7 @@ const ArmorScreen = ({ navigation, route }) => {
               >
                 <View style={styles.emptyCartView}>
                   <Icon
-                    name="book"
+                    name="shopping-sale"
                     size={70}
                     color="#1A2540"
                     style={styles.serchItemIcon}
@@ -340,7 +348,7 @@ const ArmorScreen = ({ navigation, route }) => {
                   }}
                 >
                   <View style={{ transform: [{ scale: 2 }] }}>
-                    <ActivityIndicator size="large" color="#ED2027" />
+                    <ActivityIndicator size="large" color="#d01117" />
                   </View>
                 </View>
               ) : (

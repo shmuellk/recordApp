@@ -56,11 +56,15 @@ const PopUp = ({ data, onClose, title, subTitle }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Image source={require("../assets/icons/searchIcons/Close.png")} />
         </TouchableOpacity>
-        <Text style={styles.header}>
-          {I18nManager.isRTL
-            ? `${title} : ${subTitle}`
-            : `${subTitle} : ${title}`}
-        </Text>
+        <View
+          style={{
+            flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+            alignSelf: "center",
+          }}
+        >
+          <Text style={styles.header}>{subTitle} : </Text>
+          <Text style={styles.header}>{title}</Text>
+        </View>
 
         {/* FlatList */}
         {data[0] && (

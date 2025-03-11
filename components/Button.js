@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     height: verticalScale(50), // Responsive height based on device height
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ED2027",
+    backgroundColor: "#d01117",
   },
   DisabledBtn: {
     backgroundColor: "#A9A9A9", // Grey background for disabled state

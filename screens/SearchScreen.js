@@ -46,6 +46,16 @@ const SearchScreen = ({ navigation, route }) => {
   const [searchEnabled, setSearchEnabled] = useState(false); // Loader state for search button
   const [SDkserchInput, setSDkserchInput] = useState("");
   const [SDKData, setSDKData] = useState([]);
+  const [armorModalVisible, setArmorModalVisible] = useState(false);
+
+  useEffect(() => {
+    console.log("====================================");
+    console.log(userData.inArmor);
+    console.log("====================================");
+    if (userData.inArmor) {
+      setArmorModalVisible(true);
+    }
+  }, [userData.inArmor]);
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -924,6 +934,42 @@ const SearchScreen = ({ navigation, route }) => {
             </View>
           </View>
         </Modal>
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={armorModalVisible}
+          onRequestClose={() => setArmorModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>בשורה טובה!</Text>
+              <Text style={styles.modalMessage}>
+                הפריטים ששריינת נכנסו למלאי
+              </Text>
+              <View
+                style={{
+                  flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setArmorModalVisible(false)}
+                >
+                  <Text style={styles.buttonText}>סגור</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmButton}
+                  onPress={() => {
+                    setArmorModalVisible(false);
+                    navigation.navigate("ArmorScreen", { userData: userData });
+                  }}
+                >
+                  <Text style={styles.buttonText}>לשריונים</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -965,7 +1011,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   serchClick: {
-    backgroundColor: "#ED2027",
+    backgroundColor: "#d01117",
     width: width * 0.12,
     height: height * 0.08,
     maxHeight: 61,
@@ -1112,7 +1158,7 @@ const styles = StyleSheet.create({
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   confirmButton: {
-    backgroundColor: "#ED2027",
+    backgroundColor: "#d01117",
     borderRadius: 10,
     width: 80,
     height: 40,
@@ -1121,6 +1167,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginHorizontal: 15,
   },
+
   buttonText: {
     color: "white",
     fontWeight: "bold",

@@ -17,6 +17,7 @@ import COLORS from "../components/colors";
 import Button from "../components/Button";
 import Input from "../components/lnputs";
 import usersModel from "../model/usersModel";
+import armorModel from "../model/armorModel";
 
 const { width, height } = Dimensions.get("window");
 
@@ -60,7 +61,17 @@ const LogInScreen = ({ navigation }) => {
       });
 
       if (response.length > 0) {
-        navigation.navigate("App", { userData: response[0] });
+        const userData = response[0]; // Extract user data
+        const inArmor = await armorModel.getArmorsInStock({
+          userName: userData.U_USER_NAME,
+          cardCode: userData.U_CARD_CODE,
+        });
+
+        // Correctly add `inArmor` to the userData object
+        userData.inArmor = Boolean(inArmor); // Ensure it's a boolean (true/false)
+
+        // Navigate with the modified userData
+        navigation.navigate("App", { userData });
       } else {
         handleError("שם משתמש או סיסמא שגויים", "password");
       }
