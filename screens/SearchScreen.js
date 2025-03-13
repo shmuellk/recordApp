@@ -597,9 +597,6 @@ const SearchScreen = ({ navigation, route }) => {
         CATALOG_NUMBER: item,
       });
 
-      console.log("====================================");
-      console.log("product: " + JSON.stringify(product));
-      console.log("====================================");
       if (product.length > 1) {
         Keyboard.dismiss();
         navigation.navigate("SkuScreen", {
@@ -616,9 +613,7 @@ const SearchScreen = ({ navigation, route }) => {
             CHILD_GROUP: product[0].CHILD_GROUP,
             DESCRIPTION_NOTE: product[0].DESCRIPTION_NOTE,
           });
-          console.log("====================================");
-          console.log("Brand: " + JSON.stringify(Brand));
-          console.log("====================================");
+
           navigation.navigate("ItemCardScreen", {
             item: product[0],
             Brand,

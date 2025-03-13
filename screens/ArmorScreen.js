@@ -424,9 +424,9 @@ const ArmorScreen = ({ navigation, route }) => {
             <View style={Cardstyles.orderQuantity}>
               <TouchableOpacity
                 onPress={() => decrement(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+                <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
 
               <TextInput
@@ -439,9 +439,9 @@ const ArmorScreen = ({ navigation, route }) => {
 
               <TouchableOpacity
                 onPress={() => increment(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+                <Text style={Cardstyles.quantityBtnIconPlus}>+</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -467,7 +467,7 @@ const ArmorScreen = ({ navigation, route }) => {
                 disabled={!!addItemToCart[item.id]}
               >
                 {addItemToCart[item.id] ? (
-                  <ActivityIndicator color="d01117" />
+                  <ActivityIndicator color="#d01117" />
                 ) : (
                   <Text
                     style={{
@@ -486,9 +486,9 @@ const ArmorScreen = ({ navigation, route }) => {
             <View style={Cardstyles.orderQuantity}>
               <TouchableOpacity
                 onPress={() => decrementAMOUNT(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+                <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
 
               <TextInput
@@ -501,9 +501,9 @@ const ArmorScreen = ({ navigation, route }) => {
 
               <TouchableOpacity
                 onPress={() => incrementAMOUNT(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+                <Text style={Cardstyles.quantityBtnIconPlus}>+</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -727,9 +727,25 @@ const Cardstyles = StyleSheet.create({
     backgroundColor: "white",
     width: width, // full screen width; adjust if needed
     // height: verticalScale(200),
-
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
+  },
+  quantityBtnContainer: {
+    flex: 1, // Each button takes up an equal share of the container
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityBtnIconMinus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+    marginHorizontal: 5,
+  },
+  quantityBtnIconPlus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+    marginHorizontal: 5,
   },
   itemDataView: {
     flex: 7.5,

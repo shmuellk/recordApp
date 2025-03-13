@@ -57,7 +57,7 @@ const MenuScreen = ({ navigation, route }) => {
             }
           >
             <Text style={styles.actionText}>מועדפים</Text>
-            <Icon name="staro" size={22} color="d01117" style={styles.icon} />
+            <Icon name="staro" size={22} color="#d01117" style={styles.icon} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -67,7 +67,7 @@ const MenuScreen = ({ navigation, route }) => {
             }
           >
             <Text style={styles.actionText}>שריונים</Text>
-            <Icon name="book" size={22} color="d01117" style={styles.icon} />
+            <Icon name="book" size={22} color="#d01117" style={styles.icon} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -77,7 +77,7 @@ const MenuScreen = ({ navigation, route }) => {
             }
           >
             <Text style={styles.actionText}>צור קשר</Text>
-            <Icon name="phone" size={22} color="d01117" style={styles.icon} />
+            <Icon name="phone" size={22} color="#d01117" style={styles.icon} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -85,7 +85,7 @@ const MenuScreen = ({ navigation, route }) => {
             onPress={() => setModalVisible(true)}
           >
             <Text style={styles.actionText}>התנתק</Text>
-            <Icon name="logout" size={22} color="d01117" style={styles.icon} />
+            <Icon name="logout" size={22} color="#d01117" style={styles.icon} />
           </TouchableOpacity>
 
           <Modal

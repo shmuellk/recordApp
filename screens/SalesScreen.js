@@ -90,6 +90,7 @@ const ArmorScreen = ({ navigation, route }) => {
               image: item.U_BSYIMAGE4,
               sale_quantity: item.U_QUANTITY,
               amount: 1,
+              catalog_number: item.U_CATALOG_NUMBER,
             };
           });
 
@@ -112,10 +113,10 @@ const ArmorScreen = ({ navigation, route }) => {
       fetchData();
     }, [userData])
   );
-  const increment = (id) => {
+  const increment = (id, max) => {
     setQuantities((prevAmount) =>
       prevAmount.map((q) => {
-        if (q.id === id) {
+        if (q.id === id && q.amount < max) {
           return { ...q, amount: q.amount + 1 };
         }
         return q;
@@ -168,10 +169,6 @@ const ArmorScreen = ({ navigation, route }) => {
         CATALOG_NUMBER: data,
       });
 
-      console.log("====================================");
-      console.log("product = " + JSON.stringify(product));
-      console.log("====================================");
-
       try {
         const Brand = await itemCardModel.getItemBrand({
           CATALOG_NUMBER: product[0].CATALOG_NUMBER,
@@ -179,9 +176,6 @@ const ArmorScreen = ({ navigation, route }) => {
           DESCRIPTION_NOTE: product[0].DESCRIPTION_NOTE,
         });
 
-        console.log("====================================");
-        console.log("Brand = " + JSON.stringify(Brand));
-        console.log("====================================");
         navigation.navigate("ItemCardScreen", {
           item: product[0],
           Brand,
@@ -198,16 +192,19 @@ const ArmorScreen = ({ navigation, route }) => {
 
   const renderItem = ({ item }) => {
     const handleQuantityChange = (text, id) => {
-      // Keep only numbers
+      // שמירה על ספרות בלבד
       const numericValue = text.replace(/[^0-9]/g, "");
-
+      let newQuantity =
+        !numericValue || parseInt(numericValue, 10) === 0
+          ? 1
+          : parseInt(numericValue, 10);
+      // אם הערך שהוכנס גדול מהמקסימום, נעדכן למקסימום
+      if (newQuantity > item.amount) {
+        newQuantity = item.amount;
+      }
       setQuantities((prevQuantities) =>
         prevQuantities.map((q) => {
           if (q.id === id) {
-            const newQuantity =
-              !numericValue || parseInt(numericValue, 10) === 0
-                ? 1
-                : parseInt(numericValue, 10);
             return { ...q, amount: newQuantity };
           }
           return q;
@@ -241,7 +238,7 @@ const ArmorScreen = ({ navigation, route }) => {
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <Text style={Cardstyles.cardTitle}>{item.SKU}</Text>
+        <Text style={Cardstyles.cardTitle}>{item.catalog_number}</Text>
         <Text style={Cardstyles.cardSubTitle}>{item.itemName}</Text>
         <Text style={Cardstyles.cardSubTitle}>{item.carName}</Text>
         <Text style={Cardstyles.cardSubTitle}>{item.years}</Text>
@@ -268,7 +265,7 @@ const ArmorScreen = ({ navigation, route }) => {
 
             <TouchableOpacity
               style={Cardstyles.quantityBtnContainer}
-              onPress={() => increment(item.id)}
+              onPress={() => increment(item.id, item.amount)}
             >
               <Text style={Cardstyles.quantityBtnIconPlus}>+</Text>
             </TouchableOpacity>
@@ -281,7 +278,7 @@ const ArmorScreen = ({ navigation, route }) => {
               disabled={!!addItemToCart[item.id]}
             >
               {addItemToCart[item.id] ? (
-                <ActivityIndicator color="d01117" />
+                <ActivityIndicator color="#d01117" />
               ) : (
                 <Text style={Cardstyles.addButtonText}>הוסף לעגלה</Text>
               )}

@@ -299,14 +299,14 @@ const PaymentScreen = ({ navigation, route }) => {
                 }}
               >
                 <Text
-                  style={{ color: "d01117", fontWeight: "bold", fontSize: 16 }}
+                  style={{ color: "#d01117", fontWeight: "bold", fontSize: 16 }}
                 >
                   זמן יציאת משלוח משוער:
                 </Text>
                 <View style={{ flexDirection: "row" }}>
                   <Text
                     style={{
-                      color: "d01117",
+                      color: "#d01117",
                       fontWeight: "bold",
                       fontSize: 16,
                     }}
@@ -315,7 +315,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   </Text>
                   <Text
                     style={{
-                      color: "d01117",
+                      color: "#d01117",
                       fontWeight: "bold",
                       fontSize: 16,
                     }}
@@ -324,7 +324,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   </Text>
                   <Text
                     style={{
-                      color: "d01117",
+                      color: "#d01117",
                       fontWeight: "bold",
                       fontSize: 16,
                     }}

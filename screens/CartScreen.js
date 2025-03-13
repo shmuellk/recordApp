@@ -406,9 +406,9 @@ const CartScreen = ({ navigation, route }) => {
             <View style={Cardstyles.orderQuantity}>
               <TouchableOpacity
                 onPress={() => decrement(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Minus.png")} />
+                <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
 
               <TextInput
@@ -421,9 +421,9 @@ const CartScreen = ({ navigation, route }) => {
 
               <TouchableOpacity
                 onPress={() => increment(item.id)}
-                style={Cardstyles.button}
+                style={Cardstyles.quantityBtnContainer}
               >
-                <Image source={require("../assets/icons/itemCard/Plus.png")} />
+                <Text style={Cardstyles.quantityBtnIconPlus}>+</Text>
               </TouchableOpacity>
             </View>
             {quantity == item.quantity ? (
@@ -686,6 +686,22 @@ const Cardstyles = StyleSheet.create({
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
   },
+  quantityBtnContainer: {
+    flex: 1, // Each button takes up an equal share of the container
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityBtnIconMinus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+  },
+  quantityBtnIconPlus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+  },
+
   itemDataView: {
     flex: 7.5,
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
@@ -714,7 +730,6 @@ const Cardstyles = StyleSheet.create({
     color: "#7E7D83",
     textAlign: "right", // מיישר הכל לימין
     direction: "rtl", // מכריח את הכיוון להיות RTL
-    unicodeBidi: "embed", // מונע הפיכת סדר בטקסט מעורב
   },
   infoTitle: {
     fontSize: moderateScale(16),

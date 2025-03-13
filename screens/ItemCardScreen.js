@@ -452,10 +452,24 @@ const ItemCardScreen = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* <View style={styles.supply}>
-                  <Text style={styles.supplyText}>תאריך אספקה קרוב : </Text>
-                  <Text style={styles.supplyDate}>27/06/2025</Text>
-                </View> */}
+                {infoByBrand.delivery_date === "09/09/1999" ? (
+                  <View style={styles.supply}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        navigation.navigate("ContactScreen");
+                      }}
+                    >
+                      <Text style={styles.supplyText}>שאל את הדלפק</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : infoByBrand.delivery_date ? (
+                  <View style={styles.supply}>
+                    <Text style={styles.supplyText}>תאריך אספקה קרוב : </Text>
+                    <Text style={styles.supplyDate}>
+                      {infoByBrand.delivery_date}
+                    </Text>
+                  </View>
+                ) : null}
               </>
             )}
           </View>
@@ -624,9 +638,8 @@ const styles = StyleSheet.create({
   skuText: {
     fontSize: moderateScale(16),
     color: "#1A2540",
-    textAlign: I18nManager.isRTL ? "left" : "right",
-    direction: "ltr",
-    unicodeBidi: "plaintext",
+    textAlign: "left",
+    direction: "ltr", // Keep if necessary
   },
 
   brandText: {
@@ -763,6 +776,7 @@ const styles = StyleSheet.create({
   supplyText: {
     fontSize: moderateScale(16),
     color: "#7E7D83",
+    textDecorationLine: "underline",
   },
   supplyDate: {
     fontSize: moderateScale(16),
