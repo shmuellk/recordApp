@@ -18,10 +18,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/splash.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.shmuell.newRecordApp"
     },
     "web": {
       "favicon": "./assets/splash.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "38341f86-54dc-4926-97b7-bbccbb40e613"
+      }
     }
   }
 }

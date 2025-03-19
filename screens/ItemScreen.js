@@ -382,22 +382,29 @@ const ItemScreen = ({ navigation, route }) => {
   // פונקציה לפתיחת WhatsApp עם מספר הטלפון המבוקש
   const openWhatsApp = async (phoneNumber) => {
     const searchValue = sendSerchInput || "פריט לא מוגדר";
-
     const message = `שלום.
-אני מעוניין לקבל פרטים על "${searchValue}" עבור רכב : ${carNumber}`;
-    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(
+  אני מעוניין לקבל פרטים על "${searchValue}" עבור רכב : ${carNumber}`;
+
+    // Ensure the phone number starts with "+" followed by country code
+    let formattedNumber = phoneNumber.replace(/[^0-9]/g, ""); // Remove non-numeric characters
+    if (!formattedNumber.startsWith("+")) {
+      formattedNumber = `+${formattedNumber}`; // Add "+" if missing
+    }
+
+    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(
       message
     )}`;
+
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
       } else {
-        alert("WhatsApp לא מותקן במכשיר זה");
+        alert("WhatsApp לא מותקן במכשיר זה או לא ניתן לפתוח את הקישור");
       }
     } catch (error) {
-      console.error("An error occurred", error);
-      alert("WhatsApp לא מותקן במכשיר זה");
+      console.error("Error opening WhatsApp", error);
+      alert("שגיאה בפתיחת WhatsApp");
     }
   };
 

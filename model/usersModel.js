@@ -55,10 +55,43 @@ const sendFailureEmail = async (data) => {
   }
 };
 
+const getUserExistStatus = async (data) => {
+  const U_CARD_CODE = data.U_CARD_CODE ? data.U_CARD_CODE : "";
+  const U_USER_NAME = data.U_USER_NAME ? data.U_USER_NAME : "";
+
+  console.log("====================================");
+  console.log("getUserExistStatus U_CARD_CODE = " + U_CARD_CODE);
+  console.log("getUserExistStatus U_USER_NAME = " + U_USER_NAME);
+  console.log("====================================");
+
+  try {
+    const response = await axios.get(`${IP}/users/getUserExistStatus`, {
+      params: {
+        U_CARD_CODE,
+        U_USER_NAME,
+      },
+    });
+
+    if (response.status === 200) {
+      if (response.data.result[0]) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      console.error("Unexpected status code:", response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error during getUserExistStatus request:", error);
+    return false;
+  }
+};
 const usersModel = {
   login,
   getWhatsAppUsers,
   sendFailureEmail,
+  getUserExistStatus,
 };
 
 export default usersModel;

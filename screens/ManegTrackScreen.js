@@ -189,7 +189,7 @@ const TrackScreen = ({ navigation, route }) => {
               flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
             }}
           >
-            <Text style={styles.itemHader}>מס' חשבונית : </Text>
+            <Text style={styles.itemHader}>מס' הזמנה : </Text>
             <Text
               style={[
                 styles.itemHader,
@@ -321,6 +321,10 @@ const TrackScreen = ({ navigation, route }) => {
                 borderRadius: 10,
                 borderColor: "#EBEDF8",
                 borderWidth: 2,
+                alignContent: "center",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
               }}
             >
               <TextInput
@@ -328,6 +332,7 @@ const TrackScreen = ({ navigation, route }) => {
                 style={styles.input}
                 value={clientName}
                 onChangeText={handleClientSearch}
+                selectTextOnFocus={true}
               />
             </View>
             <TouchableOpacity
@@ -469,11 +474,16 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: height * 0.01,
     textAlign: "right",
-    width: "100%",
+    height: scale(25),
+    width: verticalScale(120),
     alignSelf: "center",
     backgroundColor: "white",
-    fontSize: 14,
+    fontSize: 11,
     color: "#BDC3C7",
+    alignContent: "center",
+    alignItems: "center",
+    textAlignVertical: "center",
+    justifyContent: "center",
   },
   container2: {
     flex: 1,

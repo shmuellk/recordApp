@@ -14,13 +14,13 @@ import Icon from "react-native-vector-icons/Entypo";
 import CalendarPop from "../components/calenderPopup";
 import InvPopup from "../components/invPopup";
 import ordersModel from "../model/ordersModel";
+
 const { width, height } = Dimensions.get("window");
 
 const TrackScreen = ({ navigation, route }) => {
   const today = new Date();
-  const thisYear = today.getFullYear();
   const { userData } = route.params;
-  const defaultStartDate = new Date(thisYear, 0, 1).toLocaleDateString("en-GB");
+  const defaultStartDate = today.toLocaleDateString("en-GB");
   const defaultEndDate = today.toLocaleDateString("en-GB");
   const [isEmpty, setIsEmpty] = useState(false);
   const [openPopUp, setOpenPopUp] = useState(null);
@@ -74,6 +74,15 @@ const TrackScreen = ({ navigation, route }) => {
     };
     fatchItemsList();
   }, [selectedItem]);
+
+  const getDayName = (dateString) => {
+    const dateParts = dateString.split("/");
+    const formattedDate = new Date(
+      `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+    );
+    const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+    return days[formattedDate.getDay()];
+  };
 
   const handleItemPress = (item) => {
     setSelectedItem(item); // Set the selected item
@@ -178,7 +187,7 @@ const TrackScreen = ({ navigation, route }) => {
           <View style={{ flex: 0.5 }}></View>
           <View
             style={{
-              flex: 1.5,
+              height: height * 0.13,
               flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
               justifyContent: "space-between",
               alignItems: "center",
@@ -207,7 +216,9 @@ const TrackScreen = ({ navigation, route }) => {
               >
                 {startDate}
               </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>יום שלישי</Text>
+              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+                יום {getDayName(startDate)}
+              </Text>
             </TouchableOpacity>
 
             <View
@@ -236,9 +247,12 @@ const TrackScreen = ({ navigation, route }) => {
               >
                 {endDate}
               </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>יום שלישי</Text>
+              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+                יום {getDayName(endDate)}
+              </Text>
             </TouchableOpacity>
           </View>
+
           <View
             style={{
               flex: 0.6,

@@ -9,7 +9,9 @@ import {
   I18nManager,
   Modal,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/AntDesign"; // Using Ionicons for the left arrow
+
 const { width, height } = Dimensions.get("window");
 const MenuScreen = ({ navigation, route }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -19,9 +21,15 @@ const MenuScreen = ({ navigation, route }) => {
   console.log(userData);
   console.log("====================================");
 
-  const handleConfirm = () => {
-    setModalVisible(false); // Close the modal
-    navigation.navigate("PrevLog"); // Perform the navigation action
+  const handleConfirm = async () => {
+    setModalVisible(false); // סגירת חלון המודאל
+    try {
+      // מחיקת נתוני ההתחברות האוטומטית (למשל, המשתנה שבו שמורים הנתונים)
+      await AsyncStorage.removeItem("userData");
+    } catch (error) {
+      console.error("Error removing user data:", error);
+    }
+    navigation.navigate("PrevLog"); // ניווט למסך הכניסה
   };
 
   const handleCancel = () => {

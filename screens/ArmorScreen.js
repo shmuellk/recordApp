@@ -80,6 +80,9 @@ const ArmorScreen = ({ navigation, route }) => {
             return; // Skip further processing
           }
 
+          console.log("====================================");
+          console.log("data = " + JSON.stringify(data));
+          console.log("====================================");
           // 2) Transform each item to the desired shape:
           const transformedData = data.map((item) => ({
             id: item.ID,
@@ -428,14 +431,15 @@ const ArmorScreen = ({ navigation, route }) => {
               >
                 <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
-
-              <TextInput
-                style={Cardstyles.quantityInput}
-                value={amountToBy.toString()}
-                onChangeText={(text) => handleQuantityChange(text, item.id)}
-                keyboardType="numeric"
-                selectTextOnFocus={true}
-              />
+              <View style={Cardstyles.quantityInputContainer}>
+                <TextInput
+                  style={Cardstyles.quantityInput}
+                  value={amountToBy.toString()}
+                  onChangeText={(text) => handleQuantityChange(text, item.id)}
+                  keyboardType="numeric"
+                  selectTextOnFocus={true}
+                />
+              </View>
 
               <TouchableOpacity
                 onPress={() => increment(item.id)}
@@ -451,14 +455,14 @@ const ArmorScreen = ({ navigation, route }) => {
               style={{
                 paddingLeft: I18nManager.isRTL ? scale(10) : null,
                 paddingRight: I18nManager.isRTL ? null : scale(10),
-                justifyContent: "center",
+                // justifyContent: "center",
               }}
             >
               <TouchableOpacity
                 style={{
                   backgroundColor: "#1A2540",
                   width: scale(100),
-                  height: verticalScale(40),
+                  height: 40,
                   borderRadius: scale(15),
                   justifyContent: "center",
                   alignItems: "center",
@@ -467,7 +471,7 @@ const ArmorScreen = ({ navigation, route }) => {
                 disabled={!!addItemToCart[item.id]}
               >
                 {addItemToCart[item.id] ? (
-                  <ActivityIndicator color="#d01117" />
+                  <ActivityIndicator color="d01117" />
                 ) : (
                   <Text
                     style={{
@@ -490,14 +494,15 @@ const ArmorScreen = ({ navigation, route }) => {
               >
                 <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
-
-              <TextInput
-                style={Cardstyles.quantityInput}
-                value={amount.toString()}
-                onChangeText={(text) => handleAMOUNTChange(text, item.id)}
-                keyboardType="numeric"
-                selectTextOnFocus={true}
-              />
+              <View style={Cardstyles.quantityInputContainer}>
+                <TextInput
+                  style={Cardstyles.quantityInput}
+                  value={amount.toString()}
+                  onChangeText={(text) => handleAMOUNTChange(text, item.id)}
+                  keyboardType="numeric"
+                  selectTextOnFocus={true}
+                />
+              </View>
 
               <TouchableOpacity
                 onPress={() => incrementAMOUNT(item.id)}
@@ -701,7 +706,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   hader: {
-    flex: 1.3,
+    height: height * 0.12,
     flexDirection: "row-reverse",
     alignContent: "center",
     justifyContent: "center",
@@ -726,12 +731,21 @@ const Cardstyles = StyleSheet.create({
   card: {
     backgroundColor: "white",
     width: width, // full screen width; adjust if needed
-    // height: verticalScale(200),
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
   },
+  quantityBtnIconPlus: {
+    color: "#d01117",
+    fontWeight: "bold",
+    fontSize: 25,
+  },
   quantityBtnContainer: {
     flex: 1, // Each button takes up an equal share of the container
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityInputContainer: {
+    flex: 1, // The input also takes an equal share
     justifyContent: "center",
     alignItems: "center",
   },
@@ -739,13 +753,6 @@ const Cardstyles = StyleSheet.create({
     color: "#d01117",
     fontWeight: "bold",
     fontSize: 25,
-    marginHorizontal: 5,
-  },
-  quantityBtnIconPlus: {
-    color: "#d01117",
-    fontWeight: "bold",
-    fontSize: 25,
-    marginHorizontal: 5,
   },
   itemDataView: {
     flex: 7.5,
@@ -797,15 +804,13 @@ const Cardstyles = StyleSheet.create({
     resizeMode: "contain",
   },
   orderQuantity: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
-    alignSelf: "center",
-    justifyContent: "center",
-    width: scale(100),
-    height: verticalScale(40),
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse", // Ensures the children are in a row
+    width: scale(100), // Increase the overall width if needed
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: scale(15),
+    borderRadius: 15,
+    marginBottom: 10,
   },
   button: {
     paddingVertical: verticalScale(8),
@@ -819,11 +824,11 @@ const Cardstyles = StyleSheet.create({
   removeButtonContainer: {
     marginLeft: I18nManager.isRTL ? scale(10) : null,
     marginRight: I18nManager.isRTL ? null : scale(10),
-    justifyContent: "center",
+    // justifyContent: "center",
   },
   removeButton: {
-    width: scale(100),
-    height: verticalScale(40),
+    width: scale(80),
+    height: 40,
     backgroundColor: "#EBEDF5",
     borderRadius: scale(15),
     justifyContent: "center",

@@ -464,7 +464,9 @@ const ItemCardScreen = ({ route, navigation }) => {
                   </View>
                 ) : infoByBrand.delivery_date ? (
                   <View style={styles.supply}>
-                    <Text style={styles.supplyText}>תאריך אספקה קרוב : </Text>
+                    <Text style={styles.supplyDateText}>
+                      תאריך אספקה קרוב :{" "}
+                    </Text>
                     <Text style={styles.supplyDate}>
                       {infoByBrand.delivery_date}
                     </Text>
@@ -770,13 +772,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
-    top: verticalScale(-5),
+    top: verticalScale(-10),
     paddingHorizontal: scale(10),
+    backgroundColor: "transparent",
   },
   supplyText: {
     fontSize: moderateScale(16),
     color: "#7E7D83",
     textDecorationLine: "underline",
+  },
+  supplyDateText: {
+    fontSize: moderateScale(16),
+    color: "#7E7D83",
   },
   supplyDate: {
     fontSize: moderateScale(16),

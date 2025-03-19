@@ -7,6 +7,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+
 const { width, height } = Dimensions.get("window");
 const guidelineBaseWidth = 350;
 const guidelineBaseHeight = 680;

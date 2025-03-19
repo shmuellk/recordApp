@@ -9,13 +9,49 @@ import {
   I18nManager, // Import I18nManager to handle RTL/LTR
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import usersModel from "../model/usersModel";
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");
 
 const PrevLog = ({ navigation }) => {
-  const handelOnPress = () => {
-    navigation.navigate("LogInScreen");
+  const handelOnPress = async () => {
+    const storedDataString = await AsyncStorage.getItem("userData");
+
+    console.log("====================================");
+    console.log("storedData : ", storedDataString);
+    console.log("====================================");
+
+    if (storedDataString) {
+      try {
+        const storedData = JSON.parse(storedDataString);
+
+        // Ensure storedData has the required properties
+        if (!storedData.U_CARD_CODE || !storedData.U_USER_NAME) {
+          console.log("Missing U_CARD_CODE or U_USER_NAME in storedData");
+          navigation.navigate("LogInScreen");
+          return;
+        }
+
+        // Pass valid data to getUserExistStatus
+        const isExsiste = await usersModel.getUserExistStatus({
+          U_CARD_CODE: storedData.U_CARD_CODE,
+          U_USER_NAME: storedData.U_USER_NAME,
+        });
+
+        if (isExsiste) {
+          navigation.navigate("App", { userData: storedData });
+        } else {
+          navigation.navigate("LogInScreen");
+        }
+      } catch (error) {
+        console.error("Error parsing storedData:", error);
+        navigation.navigate("LogInScreen");
+      }
+    } else {
+      navigation.navigate("LogInScreen");
+    }
   };
 
   return (

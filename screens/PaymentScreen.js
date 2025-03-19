@@ -35,6 +35,7 @@ const PaymentScreen = ({ navigation, route }) => {
   const [cart, setCart] = useState([]);
   const [currentPopup, setCurrentPopup] = useState(null);
   const [popupsQueue, setPopupsQueue] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // New loading state
   const phoneInputRef = useRef(null);
   console.log("====================================");
   console.log("userData : " + JSON.stringify(userData));
@@ -63,10 +64,17 @@ const PaymentScreen = ({ navigation, route }) => {
   const formattedTotalWithMaam = `₪ ${totalWithMaam.toFixed(2)}`;
 
   const hendelOnClick = async () => {
+    setIsLoading(true); // Start loading
     try {
       const response = await PaymentModel.postNewOrder(cart);
       if (response) {
+        console.log("====================================");
+        console.log("order created");
+        console.log("====================================");
       } else {
+        console.log("====================================");
+        console.log("order not created");
+        console.log("====================================");
         usersModel.sendFailureEmail({
           cart: cart,
           userData: userData.U_VIEW_NAME,
@@ -98,6 +106,7 @@ const PaymentScreen = ({ navigation, route }) => {
           resetFilters: true,
         });
       }, 2000); // 2-second delay to allow popup visibility
+      setIsLoading(false); // End loading
     }
   };
 
@@ -353,7 +362,8 @@ const PaymentScreen = ({ navigation, route }) => {
                 <Button
                   title="בצע הזמנה"
                   onPress={hendelOnClick}
-                  enable={!isEmpty}
+                  enable={!isEmpty && !isLoading} // Disable while loading
+                  loading={isLoading} // Pass loading state to the button
                 />
               </View>
             </View>

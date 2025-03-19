@@ -91,6 +91,7 @@ const ArmorScreen = ({ navigation, route }) => {
               sale_quantity: item.U_QUANTITY,
               amount: 1,
               catalog_number: item.U_CATALOG_NUMBER,
+              max_amount: item.QUANTITY,
             };
           });
 
@@ -116,10 +117,14 @@ const ArmorScreen = ({ navigation, route }) => {
   const increment = (id, max) => {
     setQuantities((prevAmount) =>
       prevAmount.map((q) => {
-        if (q.id === id && q.amount < max) {
-          return { ...q, amount: q.amount + 1 };
+        if (q.id === id) {
+          if (q.amount >= max) {
+            showPopup(`הגעת לכמות המקסימלית של ${max} יחידות.`);
+            return q; // נשאיר את הכמות כמו שהיא
+          }
+          return { ...q, amount: q.amount + 1 }; // נעלה את הכמות
         }
-        return q;
+        return q; // שאר הפריטים במערך נשארים ללא שינוי
       })
     );
   };
@@ -199,9 +204,11 @@ const ArmorScreen = ({ navigation, route }) => {
           ? 1
           : parseInt(numericValue, 10);
       // אם הערך שהוכנס גדול מהמקסימום, נעדכן למקסימום
-      if (newQuantity > item.amount) {
-        newQuantity = item.amount;
+      if (newQuantity > item.max_amount) {
+        showPopup(`הגעת לכמות המקסימלית של ${item.max_amount} יחידות.`);
+        newQuantity = item.max_amount;
       }
+
       setQuantities((prevQuantities) =>
         prevQuantities.map((q) => {
           if (q.id === id) {
@@ -265,7 +272,7 @@ const ArmorScreen = ({ navigation, route }) => {
 
             <TouchableOpacity
               style={Cardstyles.quantityBtnContainer}
-              onPress={() => increment(item.id, item.amount)}
+              onPress={() => increment(item.id, item.max_amount)}
             >
               <Text style={Cardstyles.quantityBtnIconPlus}>+</Text>
             </TouchableOpacity>

@@ -7,6 +7,8 @@ const getOrdersList = async (data) => {
     const STARTDATE = data.STARTDATE ? data.STARTDATE : "";
     const ENDDATE = data.ENDDATE ? data.ENDDATE : "";
     const DELIVERYSTTS = data.DELIVERYSTTS ? data.DELIVERYSTTS : "";
+    const PAGE_SIZE = data.PAGE_SIZE ? data.PAGE_SIZE : 50;
+    const PAGE_NUMBER = data.PAGE_NUMBER ? data.PAGE_NUMBER : 1;
 
     let response = await axios.get(
       `http://app.record.a-zuzit.co.il:8085/order/data/getOrdersList`,
@@ -16,6 +18,8 @@ const getOrdersList = async (data) => {
           STARTDATE,
           ENDDATE,
           DELIVERYSTTS,
+          PAGE_SIZE,
+          PAGE_NUMBER,
         },
       }
     );

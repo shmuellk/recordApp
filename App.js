@@ -11,6 +11,18 @@ import ArmorScreen from "./screens/ArmorScreen"; // Adjust the path as necessary
 import ContactScreen from "./screens/ContactScreen";
 import PaymentScreen from "./screens/PaymentScreen";
 import { I18nManager } from "react-native"; // Import I18nManager
+import { StatusBar } from "expo-status-bar";
+import { Text, TextInput } from "react-native";
+
+if (TextInput.defaultProps == null) {
+  TextInput.defaultProps = {};
+}
+TextInput.defaultProps.allowFontScaling = false;
+
+if (Text.defaultProps == null) {
+  Text.defaultProps = {};
+}
+Text.defaultProps.allowFontScaling = false;
 
 // Keep the splash screen visible while the app is loading
 SplashScreen.preventAutoHideAsync();
@@ -47,6 +59,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
+      <StatusBar translucent backgroundColor="transparent" style="dark" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="PrevLog" component={PrevLog} />
         <Stack.Screen name="LogInScreen" component={LogInScreen} />

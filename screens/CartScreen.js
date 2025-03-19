@@ -410,14 +410,15 @@ const CartScreen = ({ navigation, route }) => {
               >
                 <Text style={Cardstyles.quantityBtnIconMinus}>—</Text>
               </TouchableOpacity>
-
-              <TextInput
-                style={Cardstyles.quantityInput}
-                value={quantity.toString()}
-                onChangeText={(text) => handleQuantityChange(text, item.id)}
-                keyboardType="numeric"
-                selectTextOnFocus={true}
-              />
+              <View style={Cardstyles.quantityInputContainer}>
+                <TextInput
+                  style={Cardstyles.quantityInput}
+                  value={quantity.toString()}
+                  onChangeText={(text) => handleQuantityChange(text, item.id)}
+                  keyboardType="numeric"
+                  selectTextOnFocus={true}
+                />
+              </View>
 
               <TouchableOpacity
                 onPress={() => increment(item.id)}
@@ -610,7 +611,7 @@ const CartScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <>
-              <View style={{ flex: 6.8 }}>
+              <View style={{ flex: 7 }}>
                 <FlatList
                   data={cartItems}
                   renderItem={({ item }) => renderItem({ item })}
@@ -686,6 +687,11 @@ const Cardstyles = StyleSheet.create({
     paddingHorizontal: scale(10),
     paddingVertical: verticalScale(10),
   },
+  quantityInputContainer: {
+    flex: 1, // The input also takes an equal share
+    justifyContent: "center",
+    alignItems: "center",
+  },
   quantityBtnContainer: {
     flex: 1, // Each button takes up an equal share of the container
     justifyContent: "center",
@@ -754,15 +760,13 @@ const Cardstyles = StyleSheet.create({
     resizeMode: "contain",
   },
   orderQuantity: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
-    alignSelf: "center",
-    justifyContent: "center",
-    width: scale(100),
-    height: verticalScale(40),
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse", // Ensures the children are in a row
+    width: scale(100), // Increase the overall width if needed
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: scale(15),
+    borderRadius: 15,
+    marginBottom: 10,
   },
   button: {
     paddingVertical: verticalScale(8),
@@ -778,11 +782,11 @@ const Cardstyles = StyleSheet.create({
 
     justifyContent: "center",
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    alignItems: "center",
+    // alignItems: "center",
   },
   removeButton: {
-    width: scale(80),
-    height: verticalScale(30),
+    width: scale(100), // Increase the overall width if needed
+    height: 40,
     backgroundColor: "#EBEDF5",
     borderRadius: scale(15),
     justifyContent: "center",
@@ -816,17 +820,12 @@ const Cardstyles = StyleSheet.create({
     alignSelf: "center",
   },
   quantityInput: {
-    width: scale(50),
-    height: verticalScale(30),
+    width: "100%", // Fills its container
+    height: "100%",
     textAlign: "center",
-    borderWidth: 1,
-    borderColor: "white",
-    borderRadius: scale(5),
-    fontSize: moderateScale(16),
     fontWeight: "bold",
     color: "#000",
-    backgroundColor: "#fff",
-    marginHorizontal: scale(5),
+    fontSize: 16,
   },
 });
 

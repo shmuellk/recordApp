@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   TouchableOpacity,
@@ -9,9 +9,14 @@ import {
   I18nManager,
 } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
-import MonthYearSelector from "./MonthYearSelector"; // Import the custom selector component
-import Icon from "react-native-vector-icons/MaterialIcons"; // Using Ionicons for the left arrow
+import MonthYearSelector from "./MonthYearSelector";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
+// -- 1. כופים RTL גלובלי --
+I18nManager.allowRTL(true);
+I18nManager.forceRTL(true);
+
+// -- 2. הגדרת לוקאל עברי --
 LocaleConfig.locales["he"] = {
   monthNames: [
     "ינואר",
@@ -46,6 +51,7 @@ LocaleConfig.locales["he"] = {
   today: "היום",
 };
 LocaleConfig.defaultLocale = "he";
+
 const { width, height } = Dimensions.get("window");
 
 const CalendarPop = ({ onClose, onSelectDate }) => {
@@ -53,25 +59,20 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
     new Date().toISOString().split("T")[0]
   );
   const [showMonthYearSelector, setShowMonthYearSelector] = useState(false);
-  useEffect(() => {
-    if (I18nManager.isRTL) {
-      I18nManager.forceRTL(true);
-    } else {
-      I18nManager.forceRTL(false);
-    }
-  }, []);
+
+  // -- 3. הסרנו את ה-useEffect שבודק I18nManager.isRTL --
+  //    אין צורך בבדיקה דינמית, כי כיפתנו RTL באופן גלובלי.
 
   const handleMonthYearSelect = (year, month) => {
-    // Set the selected date to the first day of the selected month and year as a string
     const newDate = `${year}-${String(month).padStart(2, "0")}-01`;
     setSelectedDate(newDate);
-    setShowMonthYearSelector(false); // Hide the month-year selector
+    setShowMonthYearSelector(false);
   };
 
   const handleDayPress = (day) => {
     setSelectedDate(day.dateString);
-    onSelectDate(new Date(day.dateString)); // Send date to TrackScreen
-    onClose(); // Close modal
+    onSelectDate(new Date(day.dateString));
+    onClose();
   };
 
   return (
@@ -82,23 +83,21 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
         </TouchableWithoutFeedback>
 
         <View style={styles.popupContainer}>
-          {/* Month-Year Selector */}
           {showMonthYearSelector ? (
             <MonthYearSelector
               selectedYear={parseInt(selectedDate.split("-")[0], 10)}
               onSelectMonth={handleMonthYearSelect}
             />
           ) : (
-            // Calendar with selected date set to the updated year and
             <>
               <TouchableOpacity
                 onPress={() => setShowMonthYearSelector((prev) => !prev)}
                 style={styles.monthOverlay}
-              ></TouchableOpacity>
-
+              />
               <Calendar
-                current={selectedDate} // Pass as a formatted string
+                current={selectedDate}
                 onDayPress={handleDayPress}
+                // -- 4. אפשר להחליט איך רוצים להפוך את החיצים --
                 renderArrow={(direction) => (
                   <Icon
                     name={
@@ -123,6 +122,7 @@ const CalendarPop = ({ onClose, onSelectDate }) => {
                   arrowColor: "#d01117",
                   todayTextColor: "#d01117",
                 }}
+                // -- 5. מוודאים שהלוח משתמש בלוקאל העברי --
                 locale="he"
               />
             </>
@@ -163,28 +163,15 @@ const styles = StyleSheet.create({
     maxHeight: height * 0.8,
     minHeight: height * 0.55,
   },
-  selectorToggle: {
-    alignItems: "center",
-    padding: 15,
-    backgroundColor: "#007AFF",
-    borderRadius: 10,
-    position: "absolute",
-    bottom: 10,
-    width: width * 0.9,
-    alignSelf: "center",
-    justifyContent: "center",
-  },
-  toggleText: {
-    color: "white",
-    fontWeight: "bold",
-  },
   monthOverlay: {
     zIndex: 1,
     backgroundColor: "transparent",
     height: 30,
     width: 140,
     top: height * 0.06,
-
     alignSelf: "center",
+  },
+  icon: {
+    // אם רוצים ליישר אייקונים אחרת, אפשר כאן
   },
 });

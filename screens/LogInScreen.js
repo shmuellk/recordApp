@@ -12,6 +12,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import COLORS from "../components/colors";
 import Button from "../components/Button";
@@ -69,6 +70,7 @@ const LogInScreen = ({ navigation }) => {
 
         // Correctly add `inArmor` to the userData object
         userData.inArmor = Boolean(inArmor); // Ensure it's a boolean (true/false)
+        await AsyncStorage.setItem("userData", JSON.stringify(userData));
 
         // Navigate with the modified userData
         navigation.navigate("App", { userData });

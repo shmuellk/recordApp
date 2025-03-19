@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.14.2",
-    "@react-native-community/datetimepicker": "^8.2.0",
-    "@react-native-picker/picker": "^2.9.0",
+    "@react-native-community/datetimepicker": "6.7.3",
+    "@react-native-picker/picker": "2.4.8",
     "@react-native-vector-icons/fontawesome": "^4.7.0-alpha.25",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/drawer": "^6.7.0",
@@ -22,7 +22,7 @@
     "depcheck": "^1.4.6",
     "dotenv": "^16.4.5",
     "expo": "~48.0.11",
-    "expo-clipboard": "^6.0.3",
+    "expo-clipboard": "~4.1.2",
     "expo-device": "~5.2.1",
     "expo-splash-screen": "^0.18.2",
     "expo-status-bar": "~1.4.4",
@@ -39,9 +39,11 @@
     "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-modern-datepicker": "^1.0.0-beta.91",
     "react-native-reanimated": "~2.14.4",
-    "react-native-safe-area-context": "^5.0.0",
+    "react-native-safe-area-context": "4.5.0",
     "react-native-screens": "~3.20.0",
-    "react-native-vector-icons": "^8.1.0"
+    "react-native-vector-icons": "^8.1.0",
+    "@react-native-async-storage/async-storage": "1.17.11",
+    "expo-font": "~11.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
