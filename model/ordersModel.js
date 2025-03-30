@@ -7,8 +7,6 @@ const getOrdersList = async (data) => {
     const STARTDATE = data.STARTDATE ? data.STARTDATE : "";
     const ENDDATE = data.ENDDATE ? data.ENDDATE : "";
     const DELIVERYSTTS = data.DELIVERYSTTS ? data.DELIVERYSTTS : "";
-    const PAGE_SIZE = data.PAGE_SIZE ? data.PAGE_SIZE : 50;
-    const PAGE_NUMBER = data.PAGE_NUMBER ? data.PAGE_NUMBER : 1;
 
     let response = await axios.get(
       `http://app.record.a-zuzit.co.il:8085/order/data/getOrdersList`,
@@ -18,8 +16,6 @@ const getOrdersList = async (data) => {
           STARTDATE,
           ENDDATE,
           DELIVERYSTTS,
-          PAGE_SIZE,
-          PAGE_NUMBER,
         },
       }
     );
@@ -42,6 +38,16 @@ const getAllOrdersList = async (data) => {
     const STARTDATE = data.STARTDATE ? data.STARTDATE : "";
     const ENDDATE = data.ENDDATE ? data.ENDDATE : "";
     const CARDNAME = data.CARDNAME ? data.CARDNAME : "";
+    const PAGE_SIZE = data.PAGE_SIZE ? data.PAGE_SIZE : 50;
+    const PAGE_NUMBER = data.PAGE_NUMBER ? data.PAGE_NUMBER : 1;
+    console.log("====================================");
+    console.log("CARDCODE = ", CARDCODE);
+    console.log("STARTDATE = ", STARTDATE);
+    console.log("ENDDATE = ", ENDDATE);
+    console.log("CARDNAME = ", CARDNAME);
+    console.log("PAGE_SIZE = ", PAGE_SIZE);
+    console.log("PAGE_NUMBER = ", PAGE_NUMBER);
+    console.log("====================================");
 
     let response = await axios.get(
       `http://app.record.a-zuzit.co.il:8085/order/data/getAllOrdersList`,
@@ -51,6 +57,8 @@ const getAllOrdersList = async (data) => {
           STARTDATE,
           ENDDATE,
           CARDNAME,
+          PAGE_SIZE,
+          PAGE_NUMBER,
         },
       }
     );

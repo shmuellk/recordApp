@@ -295,8 +295,8 @@ const getAlternativeSKU = async (data) => {
             self.findIndex((i) => i.toLowerCase() === item.toLowerCase()) ===
             index // Ensure distinct (case-insensitive)
         )
-        .filter((item) => item.toLowerCase().includes(SKU.toLowerCase())) // Case-insensitive filtering
-        .slice(0, 10); // Take the first 10 items
+        .filter((item) => item.toLowerCase().includes(SKU.toLowerCase()))
+        .sort(); // Case-insensitive filtering
       return tempArray;
     } else {
       console.error("Unexpected status code:", response.status);

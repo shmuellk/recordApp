@@ -772,7 +772,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     alignItems: "center",
-    top: verticalScale(-10),
     paddingHorizontal: scale(10),
     backgroundColor: "transparent",
   },

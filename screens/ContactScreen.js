@@ -79,18 +79,18 @@ const ContactScreen = ({ navigation }) => {
 
   const handleOpenMail = async () => {
     const email = "info@record.co.il";
-    const url = `mailto:${email}`;
+    const subject = "פנייה חדשה";
+    const body = "שלום, אני מעוניין במידע נוסף.";
+
+    const url = `mailto:${email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
 
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert('לא נמצאו אפליקציות דוא"ל נתמכות במכשיר זה.');
-      }
+      await Linking.openURL(url);
     } catch (error) {
       console.error("Error opening email", error);
-      Alert.alert("התרחשה שגיאה בפתיחת המייל.");
+      Alert.alert("שגיאה", "התרחשה שגיאה בפתיחת האימייל.");
     }
   };
 

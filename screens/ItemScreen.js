@@ -381,30 +381,24 @@ const ItemScreen = ({ navigation, route }) => {
 
   // פונקציה לפתיחת WhatsApp עם מספר הטלפון המבוקש
   const openWhatsApp = async (phoneNumber) => {
-    const searchValue = sendSerchInput || "פריט לא מוגדר";
-    const message = `שלום.
-  אני מעוניין לקבל פרטים על "${searchValue}" עבור רכב : ${carNumber}`;
-
-    // Ensure the phone number starts with "+" followed by country code
-    let formattedNumber = phoneNumber.replace(/[^0-9]/g, ""); // Remove non-numeric characters
-    if (!formattedNumber.startsWith("+")) {
-      formattedNumber = `+${formattedNumber}`; // Add "+" if missing
-    }
-
-    const url = `whatsapp://send?phone=${formattedNumber}&text=${encodeURIComponent(
+    const message = "שלום, אני מעוניין בפרטים נוספים.";
+    const appUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(
+      message
+    )}`;
+    const webUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       message
     )}`;
 
     try {
-      const supported = await Linking.canOpenURL(url);
+      const supported = await Linking.canOpenURL(appUrl);
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(appUrl); // פותח את וואטסאפ אם מותקן
       } else {
-        alert("WhatsApp לא מותקן במכשיר זה או לא ניתן לפתוח את הקישור");
+        await Linking.openURL(webUrl); // פותח את הדפדפן אם וואטסאפ לא מותקן
       }
     } catch (error) {
       console.error("Error opening WhatsApp", error);
-      alert("שגיאה בפתיחת WhatsApp");
+      alert("לא ניתן לפתוח את WhatsApp");
     }
   };
 

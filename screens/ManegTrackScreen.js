@@ -50,6 +50,9 @@ const TrackScreen = ({ navigation, route }) => {
   const [filteredClients, setFilteredClients] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
   useEffect(() => {
     const fetchClinentList = async () => {
       const data = await clientModel.getAllClient();
@@ -72,22 +75,54 @@ const TrackScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleSearch = async () => {
+  // עדכון: העברת פרמטר pageNumber לפונקציה
+  // בתוך הפונקציה handleSearch
+  const handleSearch = async (reset = true, pageNumber = 1) => {
     setPageloading(true);
+    if (reset) {
+      setPage(1);
+    }
     try {
       const response = await ordersModel.getAllOrdersList({
         STARTDATE: startDate,
         ENDDATE: endDate,
         CARDNAME: clientName,
+        PAGE_SIZE: pageSize,
+        PAGE_NUMBER: reset ? 1 : pageNumber,
       });
-      setOrderList(response);
-      setTotalOrder(response[0].TotalRows);
+
+      // אם אין נתונים חוזרים, עדכן את המצב בהתאם
+      if (response.length === 0) {
+        setOrderList([]);
+        setTotalOrder(0);
+        setIsEmpty(true);
+      } else {
+        setIsEmpty(false);
+        if (reset) {
+          setOrderList(response);
+        } else {
+          // מחברים את הנתונים החדשים לישנים
+          setOrderList([...orderList, ...response]);
+        }
+        if (response.length && response[0].TotalRows) {
+          setTotalOrder(response[0].TotalRows);
+        }
+      }
     } catch (err) {
       console.log("====================================");
       console.log("error = " + err);
       console.log("====================================");
     } finally {
       setPageloading(false);
+    }
+  };
+
+  // עדכון: שימוש בערך nextPage שהועבר כפרמטר
+  const loadMoreData = async () => {
+    if (!pageloading && orderList.length > 0 && orderList.length < totalorder) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      await handleSearch(false, nextPage);
     }
   };
 
@@ -98,7 +133,7 @@ const TrackScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    fatchOrderList = async () => {
+    const fatchOrderList = async () => {
       setPageloading(true);
       try {
         const response = await ordersModel.getAllOrdersList({
@@ -217,222 +252,205 @@ const TrackScreen = ({ navigation, route }) => {
   );
 
   return (
-    <>
-      {isEmpty ? (
-        <View style={styles.container}>
-          <View style={styles.emptyCartView}>
-            <Icon
-              name="list"
-              size={70}
-              color="#1A2540"
-              style={styles.serchItemIcon}
-            />
-          </View>
-          <View style={styles.massegeView}>
-            <Text style={styles.mainHader}>אין הזמנות</Text>
-            <Text style={styles.SubHader}>ההזמנות שלך יופיעו כאן</Text>
-          </View>
+    <View style={styles.container2}>
+      <View style={{ flex: 0.5 }}></View>
+      <View
+        style={{
+          height: height * 0.13,
+          flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderWidth: 1,
+          borderColor: "#E0E0E0",
+          paddingVertical: 10,
+          paddingHorizontal: 20,
+          borderRadius: 5,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => togglePopUp("start")}
+          style={{
+            flexDirection: "column",
+            alignItems: "center",
+            flex: 1,
+          }}
+        >
+          <Text style={{ fontWeight: "bold", color: "#6F6F6F", fontSize: 16 }}>
+            מתאריך
+          </Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold", marginVertical: 5 }}>
+            {startDate}
+          </Text>
+          <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+            יום {getDayName(startDate)}
+          </Text>
+        </TouchableOpacity>
+
+        <View
+          style={{
+            width: 1,
+            height: "100%",
+            backgroundColor: "#E0E0E0",
+          }}
+        />
+
+        <TouchableOpacity
+          onPress={() => togglePopUp("end")}
+          style={{
+            flexDirection: "column",
+            alignItems: "center",
+            flex: 1,
+          }}
+        >
+          <Text style={{ fontWeight: "bold", color: "#6F6F6F", fontSize: 16 }}>
+            עד תאריך
+          </Text>
+          <Text style={{ fontSize: 18, fontWeight: "bold", marginVertical: 5 }}>
+            {endDate}
+          </Text>
+          <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
+            יום {getDayName(endDate)}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View
+        style={{
+          flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+          width: width,
+          height: height * 0.06,
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+        }}
+      >
+        <View
+          style={{
+            height: scale(30),
+            width: verticalScale(130),
+            alignSelf: "center",
+            borderRadius: 10,
+            borderColor: "#EBEDF8",
+            borderWidth: 2,
+            alignContent: "center",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+          }}
+        >
+          <TextInput
+            placeholder="חפש שם לקוח"
+            style={styles.input}
+            value={clientName}
+            onChangeText={handleClientSearch}
+            selectTextOnFocus={true}
+          />
         </View>
-      ) : (
-        <View style={styles.container2}>
-          <View style={{ flex: 0.5 }}></View>
-          <View
-            style={{
-              height: height * 0.13,
-              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#E0E0E0",
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              borderRadius: 5,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => togglePopUp("start")}
-              style={{
-                flexDirection: "column",
-                alignItems: "center",
-                flex: 1,
-              }}
-            >
-              <Text
-                style={{ fontWeight: "bold", color: "#6F6F6F", fontSize: 16 }}
-              >
-                מתאריך
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "bold", marginVertical: 5 }}
-              >
-                {startDate}
-              </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
-                יום {getDayName(startDate)}
-              </Text>
-            </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#d01117",
+            height: scale(28),
+            width: verticalScale(50),
+            alignSelf: "center",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 10,
+          }}
+          onPress={() => handleSearch(true)}
+        >
+          <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
+            חפש
+          </Text>
+        </TouchableOpacity>
 
-            <View
-              style={{
-                width: 1,
-                height: "100%",
-                backgroundColor: "#E0E0E0",
-              }}
-            />
-
-            <TouchableOpacity
-              onPress={() => togglePopUp("end")}
-              style={{
-                flexDirection: "column",
-                alignItems: "center",
-                flex: 1,
-              }}
-            >
-              <Text
-                style={{ fontWeight: "bold", color: "#6F6F6F", fontSize: 16 }}
-              >
-                עד תאריך
-              </Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "bold", marginVertical: 5 }}
-              >
-                {endDate}
-              </Text>
-              <Text style={{ color: "#6F6F6F", fontSize: 16 }}>
-                יום {getDayName(endDate)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View
-            style={{
-              flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-              width: width,
-              height: height * 0.06,
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingHorizontal: 20,
-            }}
-          >
-            <View
-              style={{
-                height: scale(30),
-                width: verticalScale(130),
-                alignSelf: "center",
-                borderRadius: 10,
-                borderColor: "#EBEDF8",
-                borderWidth: 2,
-                alignContent: "center",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-              }}
-            >
-              <TextInput
-                placeholder="חפש שם לקוח"
-                style={styles.input}
-                value={clientName}
-                onChangeText={handleClientSearch}
-                selectTextOnFocus={true}
-              />
-            </View>
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#d01117",
-                height: scale(28),
-                width: verticalScale(50),
-                alignSelf: "center",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 10,
-              }}
-              onPress={handleSearch}
-            >
-              <Text
-                style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
-              >
-                חפש
-              </Text>
-            </TouchableOpacity>
-
-            <View
-              style={{
-                height: scale(30),
-                width: verticalScale(100),
-                alignSelf: "center",
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                borderColor: "#EBEDF8",
-                borderWidth: 2,
-              }}
-            >
-              <Text adjustsFontSizeToFit>סכ"ה הזמנות : {totalorder}</Text>
-            </View>
-          </View>
-          {showSuggestions && (
-            <View style={styles.suggestionsContainer}>
-              <FlatList
-                data={filteredClients}
-                keyExtractor={(item, index) => index.toString()}
-                keyboardShouldPersistTaps={"handled"}
-                renderItem={({ item }) => (
-                  <TouchableOpacity onPress={() => handleSelectClient(item)}>
-                    <Text style={styles.suggestionText}>{item}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-          )}
-          <View style={styles.ItemsSeparator} />
-          <View style={{ flex: 7.4 }}>
-            {pageloading ? (
-              /* Loader appears here if "loading" is true */
-              <View style={styles.loaderContainer}>
-                <ActivityIndicator
-                  size="large"
-                  color="#d01117"
-                  style={styles.bigSpinner}
-                />
-              </View>
-            ) : (
-              <FlatList
-                data={orderList}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => index}
-                ItemSeparatorComponent={renderSeparatorItem}
-                showsVerticalScrollIndicator={false}
-              />
+        <View
+          style={{
+            height: scale(30),
+            width: verticalScale(100),
+            alignSelf: "center",
+            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
+            borderColor: "#EBEDF8",
+            borderWidth: 2,
+          }}
+        >
+          <Text adjustsFontSizeToFit>סה"כ הזמנות : {totalorder}</Text>
+        </View>
+      </View>
+      {showSuggestions && (
+        <View style={styles.suggestionsContainer}>
+          <FlatList
+            data={filteredClients}
+            keyExtractor={(item, index) => index.toString()}
+            keyboardShouldPersistTaps={"handled"}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => handleSelectClient(item)}>
+                <Text style={styles.suggestionText}>{item}</Text>
+              </TouchableOpacity>
             )}
-          </View>
-          <Modal
-            visible={!!openPopUp}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => togglePopUp(null)}
-          >
-            <CalendarPop
-              onClose={() => togglePopUp(null)}
-              onSelectDate={handleSetDate}
-            />
-          </Modal>
-          <Modal
-            visible={!!selectedItem}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={closeInvPopup}
-          >
-            {selectedItem && (
-              <InvPopup
-                title={selectedItem}
-                onClose={closeInvPopup}
-                data={invData}
-                loading={popUploading}
-              />
-            )}
-          </Modal>
+          />
         </View>
       )}
-    </>
+      <View style={styles.ItemsSeparator} />
+      <View style={{ flex: 7.4 }}>
+        {pageloading && orderList.length === 0 ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator
+              size="large"
+              color="#d01117"
+              style={styles.bigSpinner}
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={orderList}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => index.toString()}
+            ItemSeparatorComponent={renderSeparatorItem}
+            showsVerticalScrollIndicator={false}
+            onEndReached={loadMoreData}
+            onEndReachedThreshold={0.1}
+            ListFooterComponent={
+              pageloading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#d01117"
+                  style={{ marginVertical: 10 }}
+                />
+              ) : orderList.length >= totalorder ? (
+                <Text style={styles.endText}>אין נתונים נוספים</Text>
+              ) : null
+            }
+          />
+        )}
+      </View>
+      <Modal
+        visible={!!openPopUp}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => togglePopUp(null)}
+      >
+        <CalendarPop
+          onClose={() => togglePopUp(null)}
+          onSelectDate={handleSetDate}
+        />
+      </Modal>
+      <Modal
+        visible={!!selectedItem}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeInvPopup}
+      >
+        {selectedItem && (
+          <InvPopup
+            title={selectedItem}
+            onClose={closeInvPopup}
+            data={invData}
+            loading={popUploading}
+          />
+        )}
+      </Modal>
+    </View>
   );
 };
 
@@ -453,9 +471,8 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     width: verticalScale(130),
-
     maxHeight: height * 0.3,
-    zIndex: 10, // Ensures it appears above everything else
+    zIndex: 10,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -491,7 +508,13 @@ const styles = StyleSheet.create({
   },
   itemSubText: {
     fontSize: 14,
-    color: "#666", // צבע פחות דומיננטי לשם החברה
+    color: "#666",
+  },
+  endText: {
+    textAlign: "center",
+    padding: 10,
+    color: "#666",
+    fontSize: 16,
   },
   emptyCartView: {
     justifyContent: "center",
@@ -531,19 +554,13 @@ const styles = StyleSheet.create({
     width: width * 0.28,
   },
   selectedButton: {
-    backgroundColor: "#d01117", // Red color when selected
+    backgroundColor: "#d01117",
   },
   buttonText: {
-    color: "#000000", // Default text color
+    color: "#000000",
   },
   selectedButtonText: {
-    color: "#FFFFFF", // Text color when selected
-  },
-  ItemsSeparator: {
-    height: 1.5,
-    width: width,
-    alignSelf: "center",
-    backgroundColor: "#EBEDF5",
+    color: "#FFFFFF",
   },
   ItemsSeparator: {
     height: 1.5,
@@ -574,6 +591,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bigSpinner: {
-    transform: [{ scaleX: 3 }, { scaleY: 3 }], // Scales the spinner up
+    transform: [{ scaleX: 3 }, { scaleY: 3 }],
   },
 });

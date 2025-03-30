@@ -856,6 +856,7 @@ const SearchScreen = ({ navigation, route }) => {
             <View style={styles.tubInfo}>
               <View style={styles.CarNumSerchOut}>
                 <TextInput
+                  selectTextOnFocus={true}
                   placeholder='חפש מק"ט'
                   style={styles.CarNumSerch}
                   textAlign={I18nManager.isRTL ? "right" : "right"} // Dynamic alignment for RTL/LTR
