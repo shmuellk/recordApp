@@ -49,9 +49,9 @@ const SearchScreen = ({ navigation, route }) => {
   const [armorModalVisible, setArmorModalVisible] = useState(false);
 
   useEffect(() => {
-    console.log("====================================");
-    console.log(userData.inArmor);
-    console.log("====================================");
+    // console.log("====================================");
+    // console.log(userData.inArmor);
+    // console.log("====================================");
     if (userData.inArmor) {
       setArmorModalVisible(true);
     }
