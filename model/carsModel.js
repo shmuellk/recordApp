@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const IP = "http://128.140.125.244:8080";
+const IP = "https://api.recordltd.co.il";
 
 const getCarInfo = async (carNumber) => {
   try {

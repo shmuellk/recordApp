@@ -1,5 +1,5 @@
 import axios from "axios";
-const IP = "http://128.140.125.244:8080";
+const IP = "https://api.recordltd.co.il";
 const IP2 = "http://app.record.a-zuzit.co.il:8085";
 
 const getManufacturer = async () => {
